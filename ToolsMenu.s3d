@@ -1,4 +1,8 @@
+#include "ToolIcon.s3d"
+#include "Panel.s3d"
+
 #include "SelectionPanel.s3d"
+#include "MeasuringPanel.s3d"
 
 class ToolsMenu
 {
@@ -68,15 +72,15 @@ function ToolsMenu::ToolsMenu(viveController)
 	aadd(mPanelsRotation, rotation);
 	aadd(mPanelsRotationAxis, rotationAxis);
 	
-//	selectionPanelObj = SelectionPanel();
-//	positionOffset = [-selectionPanelObj.GetWidth() / 2.0, -selectionPanelObj.GetHeight() / 3.0, mViveController.GetDepth() / 3.0];
-//	rotation = 90;
-//	rotationAxis = [0, 1, 0];
-//	
-//	aadd(mPanels, selectionPanelObj);
-//	aadd(mPanelsPositionOffset, positionOffset);
-//	aadd(mPanelsRotation, rotation);
-//	aadd(mPanelsRotationAxis, rotationAxis);
+	selectionPanelObj = MeasuringPanel(mAnimator);
+	positionOffset = [-selectionPanelObj.GetWidth() / 2.0, -selectionPanelObj.GetHeight() / 3.0, mViveController.GetDepth() / 3.0];
+	rotation = -90;
+	rotationAxis = [0, 1, 0];
+	
+	aadd(mPanels, selectionPanelObj);
+	aadd(mPanelsPositionOffset, positionOffset);
+	aadd(mPanelsRotation, rotation);
+	aadd(mPanelsRotationAxis, rotationAxis);
 }
 
 function ToolsMenu::UpdateLogic(dt, isVRon, rayOrigin, rayEnd)
@@ -88,18 +92,18 @@ function ToolsMenu::UpdateLogic(dt, isVRon, rayOrigin, rayEnd)
 	// I iterate over all the panels to update their position and to check intersections
 	for(var i = 0; i < len(mPanels); i++)
 	{
-		var panel = mPanels[i];
+		var panelObj = mPanels[i];
 		
 		// Updating the position of the panel with respect to the menu controller
-		panel.SetPosition(mViveController.LocalToWorld(mPanelsPositionOffset[i]));
-		panel.SetRotationMatrix(mViveController.GetRotationMatrix());
-		panel.Rotate(mPanelsRotation[i], mPanelsRotationAxis[i]);
+		panelObj.SetPosition(mViveController.LocalToWorld(mPanelsPositionOffset[i]));
+		panelObj.SetRotationMatrix(mViveController.GetRotationMatrix());
+		panelObj.Rotate(mPanelsRotation[i], mPanelsRotationAxis[i]);
 		
 		var findContact = false;
 		var contactPointTmp;
 		
 		// Now I need to check if the action controller intersects this panel
-		if(panel.IsColliding(rayOrigin, rayEnd, &contactPointTmp))
+		if(panelObj.IsColliding(rayOrigin, rayEnd, &contactPointTmp))
 		{
 			// If there was an intersection there might be another panel which is actually closer to the action controller; so I need
 			// to check if the distance of this panel is lower than the previous distance found (if there was one)
@@ -115,7 +119,7 @@ function ToolsMenu::UpdateLogic(dt, isVRon, rayOrigin, rayEnd)
 		}
 				
 		// I update the logic of the panel (currently it's only the position of the icons)
-		panel.UpdateLogic(isVRon);
+		panelObj.UpdateLogic(isVRon);
 	}
 	
 	// If a panel was intersected, I check if any icon was intersected, and save the contact point for later (it will be used

@@ -1,14 +1,14 @@
 
-class SelectionPanel : Panel
+class MeasuringPanel : Panel
 {
 	// Public inherited functions
 	UpdateLogic(isVRon);
 };
 
 
-function SelectionPanel::SelectionPanel(animator)
+function MeasuringPanel::MeasuringPanel(animator)
 {
-	Panel::this.Init("Selection Tools", animator);
+	Panel::this.Init("Measuring Tools", animator); 
 	
 	var selToolObj = ToolIcon("Textures/icons/select.png", "Info tool", 0);	
 	var selToolObj2 = ToolIcon("Textures/icons/select.png", "Info tool", 0);
@@ -16,17 +16,18 @@ function SelectionPanel::SelectionPanel(animator)
 	var selToolObj4 = ToolIcon("Textures/icons/select.png", "Info tool", 0);
 	var selToolObj5 = ToolIcon("Textures/icons/select.png", "Info tool", 0);
 	var selToolObj6 = ToolIcon("Textures/icons/select.png", "Info tool", 0);
+	
 
 	aadd(mTools, {selToolObj, selToolObj2, selToolObj3});
-	aadd(mTools, {selToolObj4, selToolObj5});
 	aadd(mTools, {selToolObj6});
+	aadd(mTools, {selToolObj4, selToolObj5});
 }
 
 /*
  * This method currently only updates the position of the icons in the panel
  */
-function SelectionPanel::UpdateLogic(isVRon)
+function MeasuringPanel::UpdateLogic(isVRon)
 {
-	// Calling the base class method; it updates the position of the icons
-	Panel::this.UpdateLogic(isVRon); 
+	Panel::this.UpdateLogic(isVRon);
 }
+

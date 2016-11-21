@@ -1,0 +1,279 @@
+
+/*
+ * This class has to be considered as an abstract class: it must be inherited by other classes. It handles the generic things of a panel
+ * in the menu, such as the shape, the positioning of the icons, the search for intersections with the ray of the action controller
+ */
+class Panel
+{
+	// Sizes of the panel
+	var mToolPanelWidth;
+	var mToolPanelHeight;
+	var mToolPanelSilhouetteTickness;
+	
+	// These variables contain the x coordinates of the range where the icons are drawn in the panel (in the local space of the panel 
+	// itself). They're needed to define the range along the x axis where the icons are put inside the panel
+	var mMinIconRange;
+	var mMaxIconRange;
+	
+	// Obj of the panel
+	var mPanel;
+	
+	// Text object containing the name of the panel
+	var mPanelName;
+	
+	// This array contains the list of icons in the panel. It's organized as a list of lists: each list is a row in the panel
+	var mTools;
+	
+	// Animator object to create smooth transitions
+	var mAnimator;
+	
+	// When the user is pointing with the action controller over an icon, this variable holds the reference to that icon
+	var mCurrentHoveredTool;
+	
+	// When the user selects an icon with the action controller, this variable holds the reference to that icon
+	var mCurrentSelectedTool;
+	
+	
+	// This method works as the constructor for the class: the classes that will inherit from this class will need to call
+	// this in their constructor as the first call
+	Init(panelName, animator);
+	
+	// Public functions (protected)
+	Draw();
+	GetWidth();
+	GetHeight();
+	GetObj();
+	SetPosition(position);
+	Translate(transl);
+	GetPosition();
+	SetRotationMatrix(matrix);
+	GetRotationMatrix();
+	Rotate(angle, x, y, z);
+	SetRotation(angle, x, y, z);
+	LocalToWorld(point);
+	Hide();
+	Unhide();
+	SetScale(x, y, z);
+	IsVisible();
+	IsCollidingBBox(object);
+	IsColliding(rayOrigin, rayEnd, contactPoint);
+	
+	FindIntersection(rayOrigin, rayEnd);
+	
+	// Public functions that need to be overwritten; the classes that will inherit from this class will still need to call
+	// this method in their override function as the first call, to update general things of the panel
+	UpdateLogic(debugMode);
+};
+
+
+/*
+ * This method works as the constructor. It takes as input the string corresponding to the name of the panel and a reference to an
+ * Animator object used for animations by the ToolsMenu class
+ */
+function Panel::Init(panelName, animator)
+{
+	mAnimator = animator;
+	
+	mCurrentHoveredTool = Void;
+	mCurrentSelectedTool = Void;
+	
+	mToolPanelSilhouetteTickness = 0.02 * SCALE_FACTOR;
+	mToolPanelWidth = 1.0 * SCALE_FACTOR;
+	mToolPanelHeight = 1.0 * SCALE_FACTOR;
+	
+	mMinIconRange = -0.5 * SCALE_FACTOR;
+	mMaxIconRange = 0.5 * SCALE_FACTOR;
+	
+	// Creating the panel object with the respective function from the Utils class. I rotate it
+	mPanel = CreateGlassPlane(mToolPanelWidth, mToolPanelHeight, 0.01 * SCALE_FACTOR, [1.0, 1.0, 1.0], 0.5);
+	
+	// Text with the name of the panel
+	mPanelName = Text(panelName, 0.3, [1, 1, 1]);
+	mPanel.AddChild(mPanelName.GetObj(), -0.05 * SCALE_FACTOR, mToolPanelHeight / 2.0 - mPanelName.GetFontHeight(), 0.01 * SCALE_FACTOR);
+
+	// Initializing the array that will hold the icons for the tools. It will be filled up by the class that will inherit this one
+	mTools = {};
+}
+
+/*
+ * This method currently only updates the position of the icons in the panel
+ */
+function Panel::UpdateLogic(isVRon)
+{
+	var toolsRows = len(mTools);
+	
+	var initialYoffset = 0.1 * SCALE_FACTOR;
+	
+	// I need to position every icon, so I iterate over all of the rows of icons
+	for(var i = 0; i < toolsRows; i++)
+	{
+		var toolRow = mTools[i];
+		var toolsInRow = len(toolRow);
+		
+		// For each row, I iterate over every icon in it
+		for(var j = 0; j < toolsInRow; j++)
+		{
+			var toolIcon = toolRow[j];
+			
+			// To find the x coordinate (in the local space of the panel) I use this formula that takes into account the whole range
+			// in which icons are allowed to be (found by writing examples with pen and paper)
+			var x = (Abs(mMinIconRange) + Abs(mMaxIconRange)) / (toolsInRow + 1) * (j + 1) + mMinIconRange;
+			
+			// The y coordinate takes into account the current number of the row we're considering; I add an initial offset to this
+			var y = initialYoffset - (toolIcon.GetHeight() + 0.05 * SCALE_FACTOR) * i;
+
+			// Finally, I can set the position and orientation of the icon
+			toolIcon.SetPosition(mPanel.LocalToWorld([x, y, 0.01 * SCALE_FACTOR]));
+			toolIcon.SetRotationMatrix(mPanel.GetRotationMatrix());
+		}
+	}
+}
+
+/*
+ * This method is onyl called by the ToolsMenu class if there is an intersection of a ray inside the panel, i.e. the action controller
+ * is directly pointing this panel. This method has the task of finding where the ray is hitting
+ */
+function Panel::FindIntersection(rayOrigin, rayEnd)
+{
+	var found = false;
+
+	// I need to check if the ray is pointing any icon
+	for(var i = 0; i < len(mTools) && !found; i++)
+	{
+		var toolRow = mTools[i];
+		
+		for(var j = 0; j < len(toolRow) && !found; j++)
+		{
+			var toolIcon = toolRow[j];
+			
+			// If this icon is being hit, we're done
+			if(toolIcon.IsColliding(rayOrigin, rayEnd))
+			{
+				found = true;
+				
+				// If this icon wasn't being hovered, now it is. So I save this information and create an animation
+				if(toolIcon != mCurrentHoveredTool)
+				{
+					mCurrentHoveredTool = toolIcon;
+					mAnimator.CreateScalingTransition(toolIcon.GetObj(), toolIcon.GetScale(), [1.35, 1.35, 1], 0.1, false);	
+				}
+			}
+		}
+	}
+	
+	// If no icon was hit and there was an icon hovered, now it's not anymore, so I save this fact and create an animation
+	if(!found && mCurrentHoveredTool != Void)
+	{
+		mAnimator.CreateScalingTransition(mCurrentHoveredTool.GetObj(), mCurrentHoveredTool.GetScale(), [1, 1, 1], 0.1, false);	
+		mCurrentHoveredTool = Void;
+	}
+}
+
+function Panel::Draw()
+{
+	// Drawing each icon
+	for(var i = 0; i < len(mTools); i++)
+	{
+		var toolRow = mTools[i];
+		
+		for(var j = 0; j < len(toolRow); j++)
+		{
+			toolRow[j].Draw();
+		}
+	}
+	
+	// Drawing the panel itself; I draw it last so that it can render the opacity right
+	mPanel.Draw();
+}
+
+function Panel::GetWidth()
+{
+	return mToolPanelWidth + mToolPanelSilhouetteTickness;
+}
+
+
+function Panel::GetHeight()
+{
+	return mToolPanelHeight + mToolPanelSilhouetteTickness;
+}
+
+function Panel::IsColliding(rayOrigin, rayEnd, contactPoint)
+{
+	return mPanel.IsColliding(rayOrigin, rayEnd, &contactPoint);
+}
+
+function Panel::GetObj()
+{
+	return mPanel;
+}
+
+//function Panel::SetActionAvailable(isActionAvailable)
+//{
+//	mViveController.SetActionAvailable(isActionAvailable);
+//}
+
+function Panel::SetPosition(position)
+{
+	mPanel.SetPosition(position);
+}
+
+function Panel::GetPosition()
+{
+	return mPanel.GetPosition();
+}
+
+function Panel::SetRotationMatrix(matrix)
+{
+	mPanel.SetRotationMatrix(matrix);
+}
+
+function Panel::GetRotationMatrix()
+{
+	return mPanel.GetRotationMatrix();
+}
+
+
+function Panel::Rotate(angle, x, y, z)
+{
+	mPanel.Rotate(angle, x, y, z);
+}
+
+function Panel::SetRotation(angle, x, y, z)
+{
+	mPanel.SetRotation(angle, x, y, z);
+}
+
+function Panel::LocalToWorld(point)
+{
+	return mPanel.LocalToWorld(point);
+}
+
+function Panel::Hide()
+{
+	mPanel.Hide();
+}
+
+function Panel::Unhide()
+{
+	mPanel.Unhide();
+}
+
+function Panel::SetScale(x, y, z)
+{
+	mPanel.SetScale(x, y, z);
+}
+
+//function Panel::IsVisible()
+//{
+//	return mViveController.IsVisible();
+//}
+
+function Panel::Translate(transl)
+{
+	mPanel.Translate(transl);
+}
+
+function Panel::IsCollidingBBox(object)
+{
+	return mPanel.IsCollidingBBox(object);
+}
