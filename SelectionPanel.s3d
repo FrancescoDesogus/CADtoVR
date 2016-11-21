@@ -1,0 +1,188 @@
+ 
+class SelectionPanel
+{
+//	var mViveController;
+	
+	var mToolPanelSilhouetteTickness;
+	var mToolPanelWidth;
+	var mToolPanelHeight;
+	
+	var mPanel;
+	var mPanelName;
+	
+	var mTools;
+	
+	
+	// Public functions
+	Draw();
+	GetWidth();
+	GetHeight();
+	GetObj();
+	GetIndex();
+	SetActionAvailable(isActionAvailable);
+	GetControllerTipCoordinates();
+	GetDirection();
+	SetPosition(position);
+	Translate(transl);
+	GetPosition();
+	SetRotationMatrix(matrix);
+	GetRotationMatrix();
+	Rotate(angle, x, y, z);
+	SetRotation(angle, x, y, z);
+	LocalToWorld(point);
+	Hide();
+	Unhide();
+	SetScale(x, y, z);
+	IsVisible();
+	IsCollidingBBox(object);
+	
+	IsColliding(rayOrigin, rayEnd, contactPoint);
+	
+	UpdateLogic(debugMode);
+	FindIntersection(rayOrigin, rayEnd);
+};
+
+
+function SelectionPanel::SelectionPanel()
+{
+	mToolPanelSilhouetteTickness = 0.02 * SCALE_FACTOR;
+	mToolPanelWidth = 1.0 * SCALE_FACTOR;
+	mToolPanelHeight = 1.0 * SCALE_FACTOR;
+	
+	mPanel = CreateGlassPlane(mToolPanelWidth, mToolPanelHeight, 0.01 * SCALE_FACTOR, [1.0, 1.0, 1.0], 0.5);
+	mPanel.Rotate(90, 1, 0, 0);
+	
+	mPanelName = Text("Selection Tools", 0.3, [1, 1, 1]);
+	mPanel.AddChild(mPanelName.GetObj(), 0, mToolPanelHeight / 2.0 - mPanelName.GetFontHeight(), 0.01 * SCALE_FACTOR);
+	
+	
+	var iconWidth = 0.15 * SCALE_FACTOR;
+	var iconHeight = 0.15 * SCALE_FACTOR;
+	
+	var selectionTool = CVmNewMesh(VRP_PLANE, 1, [-iconWidth / 2.0, -iconHeight / 2.0, 0], [iconWidth / 2.0, iconHeight / 2.0, 0], 2, 2);
+	var selToolObj = CVmObj(selectionTool);
+	
+	var selectionMaterial = CVmMaterial();
+	selectionMaterial.Ambient = [0, 0, 0];
+	selectionMaterial.Shininess = 0.05;
+	selectionMaterial.Specular = [0,0,0];
+	selectionMaterial.SetTexture(CVmTexture("Textures/icons/select.png"));
+	
+	selectionTool.SetMaterial(selectionMaterial);
+	
+//	mTools = {};
+	mTools = selToolObj;
+//	aadd(mTools, selToolObj);
+}
+
+function SelectionPanel::UpdateLogic(isVRon)
+{
+	mTools.SetPosition(mPanel.LocalToWorld([-0.2 * SCALE_FACTOR, 0.1 * SCALE_FACTOR, 0.01 * SCALE_FACTOR]));
+	mTools.SetRotationMatrix(mPanel.GetRotationMatrix());
+}
+
+function SelectionPanel::FindIntersection(rayOrigin, rayEnd)
+{
+	if(mTools.IsColliding(rayOrigin, rayEnd))
+	{
+		outputln("YE");
+	}
+}
+
+function SelectionPanel::Draw()
+{
+	mTools.Draw();
+	mPanel.Draw();
+}
+
+function SelectionPanel::GetWidth()
+{
+	return mToolPanelWidth + mToolPanelSilhouetteTickness;
+}
+
+
+function SelectionPanel::GetHeight()
+{
+	return mToolPanelHeight + mToolPanelSilhouetteTickness;
+}
+
+function SelectionPanel::IsColliding(rayOrigin, rayEnd, contactPoint)
+{
+	return mPanel.IsColliding(rayOrigin, rayEnd, &contactPoint);
+}
+
+function SelectionPanel::GetObj()
+{
+	return mPanel;
+}
+
+//function SelectionPanel::SetActionAvailable(isActionAvailable)
+//{
+//	mViveController.SetActionAvailable(isActionAvailable);
+//}
+
+function SelectionPanel::SetPosition(position)
+{
+	mPanel.SetPosition(position);
+}
+
+function SelectionPanel::GetPosition()
+{
+	return mPanel.GetPosition();
+}
+
+function SelectionPanel::SetRotationMatrix(matrix)
+{
+	mPanel.SetRotationMatrix(matrix);
+}
+
+function SelectionPanel::GetRotationMatrix()
+{
+	return mPanel.GetRotationMatrix();
+}
+
+
+function SelectionPanel::Rotate(angle, x, y, z)
+{
+	mPanel.Rotate(angle, x, y, z);
+}
+
+function SelectionPanel::SetRotation(angle, x, y, z)
+{
+	mPanel.SetRotation(angle, x, y, z);
+}
+
+function SelectionPanel::LocalToWorld(point)
+{
+	return mPanel.LocalToWorld(point);
+}
+
+function SelectionPanel::Hide()
+{
+	mPanel.Hide();
+}
+
+function SelectionPanel::Unhide()
+{
+	mPanel.Unhide();
+}
+
+function SelectionPanel::SetScale(x, y, z)
+{
+	mPanel.SetScale(x, y, z);
+}
+
+//function SelectionPanel::IsVisible()
+//{
+//	return mViveController.IsVisible();
+//}
+
+function SelectionPanel::Translate(transl)
+{
+	mPanel.Translate(transl);
+}
+
+function SelectionPanel::IsCollidingBBox(object)
+{
+	return mPanel.IsCollidingBBox(object);
+}

@@ -1,0 +1,109 @@
+// #define _S3D_ALLOW_OBSOLETE_FUNCTIONS
+ 
+var HMD = null;
+
+#include <Script3d.h>
+#include <Camera.s3d.h>
+#include "ApplicationManager.s3d"
+
+/* Set global parameters */
+SET SCENE_FOV  = 90;
+SET SCENE_NEAR = 0.1;
+SET SCENE_FAR  = 1000;
+SET AUDIO_MODE = 2;
+
+var mApplicationManager;
+
+var oldTime = 0;
+var newTime = 0;
+var dt = 0;
+
+function OnDownload()
+{
+	/** VIVE MESH LOADING */	
+	FileDownload("Meshes/Vive_Controller_Mesh/Exported/Body/body.aam");	
+	FileDownload("Meshes/Vive_Controller_Mesh/Exported/Button/button.aam");
+	FileDownload("Meshes/Vive_Controller_Mesh/Exported/Full_Body/vr_controller_vive_1_5.aam.aam");	
+	FileDownload("Meshes/Vive_Controller_Mesh/Exported/Led/led.aam");	
+	FileDownload("Meshes/Vive_Controller_Mesh/Exported/Left_grip/l_grip.aam");	
+	FileDownload("Meshes/Vive_Controller_Mesh/Exported/Right_Grip/r_grip.aam");
+	FileDownload("Meshes/Vive_Controller_Mesh/Exported/Scroll_Wheel/scroll_wheel.aam");	
+	FileDownload("Meshes/Vive_Controller_Mesh/Exported/System_Button/sys_button.aam");
+	FileDownload("Meshes/Vive_Controller_Mesh/Exported/Trackpad/trackpad.aam");
+	FileDownload("Meshes/Vive_Controller_Mesh/Exported/Trackpad_Scroll_Cut/trackpad_scroll_cut.aam");
+	FileDownload("Meshes/Vive_Controller_Mesh/Exported/Trackpad_touch/trackpad_touch.aam");
+	FileDownload("Meshes/Vive_Controller_Mesh/Exported/Trigger/trigger.aam");
+}
+
+/* Init system - Starts ApplicationManager */
+function OnInit(params)
+{
+	SetLocalDir("");	
+	
+	HMD = CVmExternDLL( "FrancoDLL.dll" );
+	
+	HMD.__AddFunction( C_INT, "IsVRactive");	
+	HMD.__AddFunction( C_PFLOAT_2, "GetControllersIndex");	
+	HMD.__AddFunction( C_VOID, "SceneBegin");
+	HMD.__AddFunction( C_VOID, "frame_left");
+	HMD.__AddFunction( C_VOID, "frame_right");
+	HMD.__AddFunction( C_VOID, "SceneEnd");
+	HMD.__AddFunction( C_PFLOAT_16, "GetControllerMatrix", C_INT);
+	HMD.__AddFunction( C_PFLOAT_16, "GetCameraMatrix");
+	HMD.__AddFunction( C_PFLOAT_2, "GetTouchpadCoord", C_INT);
+	HMD.__AddFunction( C_PFLOAT_2, "GetTriggerCoord", C_INT);
+	HMD.__AddFunction( C_INT, "IsMenuPressed", C_INT);
+	HMD.__AddFunction( C_INT, "IsSystemButtonPressed", C_INT);
+	HMD.__AddFunction( C_INT, "IsTriggerPressed", C_INT);
+	HMD.__AddFunction( C_INT, "IsGripPressed", C_INT);
+	HMD.__AddFunction( C_INT, "IsTouchpadPressed", C_INT);
+	HMD.__AddFunction( C_VOID, "VibrateController", C_INT, C_INT);
+	HMD.__AddFunction( C_PFLOAT_2, "GetPlayAreaSize");
+	
+	mApplicationManager = ApplicationManager(HMD);
+	
+	oldTime = GetTime();
+	
+	// I don't know why, but we have to disable the cursor both here and in the InputManager class
+	ShowCursor(false);
+}
+
+/* Render recursively */
+function OnFrame()
+{
+	mApplicationManager.Render();
+}
+
+/* Game Logic update - recursive */
+function OnTimer()
+{
+	// Delta time computation
+	newTime = GetTime();
+	dt = (newTime - oldTime) * 0.001;
+	oldTime = newTime;
+	
+	mApplicationManager.UpdateLogic(dt);
+}
+
+function OnExit()
+{
+}
+
+function DownloadReady()
+{
+}
+
+function OnError()
+{
+}
+
+function OnEvent(eventId, param1, param2)
+{
+	// A scopo di debug c'è un evento che viene chiamato quando si entra nel debug mode; l'id dell'evento è deciso arbitrariamente a 5000 (fino a 2023 
+	// sono riservati, quindi ho messo un valore più alto per evitare potenziali overwrite)
+	if(eventId == 5000)
+	{
+		// Il parametro 1 ricevuto dall'evento indica se si sta entrando o uscendo dalla fase di debug (true -> mostra il cursore, false -> nascondi)
+		ShowCursor(param1);
+	}
+}

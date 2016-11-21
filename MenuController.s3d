@@ -1,0 +1,227 @@
+#include "ToolsMenu.s3d"
+
+class MenuController
+{
+	var mViveController;
+	var mMenuController;
+	var mControllerIndex;
+	
+	var mPanelDistanceToController;
+	var mToolPanelWidth;
+	var mToolPanelHeight;
+	var mToolPanelDepth;
+	
+	var mToolPanel;
+	
+	
+	// Public functions
+	Draw();
+	GetObj();
+	GetIndex();
+	SetActionAvailable(isActionAvailable);
+	GetControllerTipCoordinates();
+	GetDirection();
+	SetPosition(position);
+	Translate(transl);
+	GetPosition();
+	SetRotationMatrix(matrix);
+	GetRotationMatrix();
+	Rotate(angle, x, y, z);
+	SetRotation(angle, x, y, z);
+	LocalToWorld(point);
+	Hide();
+	Unhide();
+	SetScale(x, y, z);
+	IsVisible();
+	IsCollidingBBox(object);
+	
+	UpdateLogic(debugMode, actionController);
+};
+
+
+function MenuController::MenuController(viveController)
+{
+	mViveController = viveController;
+	mControllerIndex = mViveController.GetIndex();
+	
+//	mToolPanel = CreateGlassPlane(1.0 * SCALE_FACTOR, 1.0 * SCALE_FACTOR, 0.02 * SCALE_FACTOR, [1.0, 1.0, 1.0], 0.5);
+//	mToolPanel.Rotate(90, 1, 0, 0);
+
+	mToolPanel = ToolsMenu(mViveController);
+	
+//	mViveController.AddChild(mToolPanel, 0.0, mViveController.GetHeight(), 0.0);
+}
+
+function MenuController::UpdateLogic(isVRon, actionController)
+{
+	if(!isVRon)
+	{
+		static var rotX = 0;
+		static var rotY = 0;
+		static var rotZ = 0;
+			
+		if(KeyPressed("F"))
+			rotX += 1;
+		
+		if(KeyPressed("H"))
+			rotX -= 1;
+			
+		if(KeyPressed("T"))
+			rotY += 1;
+		
+		if(KeyPressed("G"))
+			rotY -= 1;
+			
+		if(KeyPressed("R"))
+			rotZ += 1;
+		
+		if(KeyPressed("Y"))
+			rotZ -= 1;
+		
+		mViveController.SetRotation(0, 1, 0, 0);
+		mViveController.Rotate(rotY, 1, 0, 0);
+		mViveController.Rotate(rotX, 0, 1, 0);
+		mViveController.Rotate(rotZ, 0, 0, 1);
+		
+		
+		static var xOffset = 0;
+		static var yOffset = 0;
+		static var zOffset = 0;
+		
+		if(KeyPressed("L"))
+			xOffset += 0.05 * SCALE_FACTOR;
+		
+		if(KeyPressed("J"))
+			xOffset -= 0.05 * SCALE_FACTOR;
+			
+		if(KeyPressed("I"))
+			zOffset += 0.05 * SCALE_FACTOR;
+		
+		if(KeyPressed("K"))
+			zOffset -= 0.05 * SCALE_FACTOR;
+			
+//		if(KeyPressed(VK_NUMPAD1))
+//			yOffset += 1.0 * SCALE_FACTOR;
+//		
+//		if(KeyPressed(VK_RSHIFT))
+//			yOffset -= 1.0 * SCALE_FACTOR;
+//			
+
+		mViveController.SetPosition(mViveController.GetPosition() + [xOffset, yOffset, zOffset]);
+	}
+	
+	// I need to check if the action controller is pointing towards the menu
+	var rayOrigin = actionController.GetPosition();
+	var rayEnd = actionController.GetDirection() * CameraGetCurrent().GetZFar();
+	
+	// Updating the logic of the menu. It will update its position with respect to the controller and will check if 
+	// the action controller intersects the menu
+	mToolPanel.UpdateLogic(isVRon, rayOrigin, rayEnd);
+	
+	// If the action controller intersects the tool panel, this method retrieves the contact point (which is void if no intersection is found)
+	var contactPoint = mToolPanel.IsIntersectionFound();
+	
+	var intersectionWasFound = contactPoint != Void;
+	
+	// In case there was an intersection, I tell the action controller to draw the ray from the controller to the contact point found
+	actionController.SetDrawRay(intersectionWasFound, rayOrigin, contactPoint);
+}
+
+function MenuController::Draw()
+{
+	mViveController.Draw(VR_NO_CULLING);
+
+	mToolPanel.Draw();
+}
+
+function MenuController::GetObj()
+{
+	return mViveController.GetObj();
+//	return mMenuController;
+}
+
+function MenuController::GetIndex()
+{
+	return mControllerIndex;
+}
+
+function MenuController::SetActionAvailable(isActionAvailable)
+{
+	mViveController.SetActionAvailable(isActionAvailable);
+}
+
+function MenuController::GetControllerTipCoordinates()
+{
+	return mViveController.GetControllerTipCoordinates();
+}
+
+function MenuController::GetDirection()
+{
+	return mViveController.GetDirection();
+}
+
+function MenuController::SetPosition(position)
+{
+	mViveController.SetPosition(position);
+}
+
+function MenuController::GetPosition()
+{
+	return mViveController.GetPosition();
+}
+
+function MenuController::SetRotationMatrix(matrix)
+{
+	mViveController.SetRotationMatrix(matrix);
+}
+
+function MenuController::GetRotationMatrix()
+{
+	return mViveController.GetRotationMatrix();
+}
+
+
+function MenuController::Rotate(angle, x, y, z)
+{
+	mViveController.Rotate(angle, x, y, z);
+}
+
+function MenuController::SetRotation(angle, x, y, z)
+{
+	mViveController.SetRotation(angle, x, y, z);
+}
+
+function MenuController::LocalToWorld(point)
+{
+	return mViveController.LocalToWorld(point);
+}
+
+function MenuController::Hide()
+{
+	mViveController.Hide();
+}
+
+function MenuController::Unhide()
+{
+	mViveController.Unhide();
+}
+
+function MenuController::SetScale(x, y, z)
+{
+	mViveController.SetScale(x, y, z);
+}
+
+function MenuController::IsVisible()
+{
+	return mViveController.IsVisible();
+}
+
+function MenuController::Translate(transl)
+{
+	mViveController.Translate(transl);
+}
+
+function MenuController::IsCollidingBBox(object)
+{
+	return mViveController.IsCollidingBBox(object);
+}

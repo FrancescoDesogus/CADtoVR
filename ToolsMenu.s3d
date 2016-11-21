@@ -1,0 +1,218 @@
+#include "SelectionPanel.s3d"
+
+class ToolsMenu
+{
+	var mViveController;
+	
+	var mToolsMenuDistanceToController;
+	var mToolPanelWidth;
+	var mToolPanelHeight;
+	var mToolPanelDepth;
+	
+	var mToolsMenu;
+	var mPanels;
+	var mPanelsPositionOffset;
+	var mPanelsRotation;
+	var mPanelsRotationAxis;
+	
+	var mIntersectionPoint;
+	
+	
+	// Public functions
+	Draw();
+	GetObj();
+	GetIndex();
+	SetActionAvailable(isActionAvailable);
+	GetControllerTipCoordinates();
+	GetDirection();
+	SetPosition(position);
+	Translate(transl);
+	GetPosition();
+	SetRotationMatrix(matrix);
+	GetRotationMatrix();
+	Rotate(angle, x, y, z);
+	SetRotation(angle, x, y, z);
+	LocalToWorld(point);
+	Hide();
+	Unhide();
+	SetScale(x, y, z);
+	IsVisible();
+	IsCollidingBBox(object);
+	
+	UpdateLogic(debugMode, rayOrigin, rayEnd);
+	IsIntersectionFound();
+};
+
+
+function ToolsMenu::ToolsMenu(viveController)
+{
+	mViveController = viveController;
+	mIntersectionPoint = [0, 0, 0];
+	
+	mPanels = {};
+	mPanelsPositionOffset = {};
+	mPanelsRotation = {};
+	mPanelsRotationAxis = {};
+	
+	var selectionPanelObj = SelectionPanel();
+	var positionOffset = [0, mViveController.GetHeight() / 2.0, selectionPanelObj.GetHeight() / 3.0];
+	var rotation = -90;
+	var rotationAxis = [1, 0, 0];
+	
+	aadd(mPanels, selectionPanelObj);
+	aadd(mPanelsPositionOffset, positionOffset);
+	aadd(mPanelsRotation, rotation);
+	aadd(mPanelsRotationAxis, rotationAxis);
+	
+//	selectionPanelObj = SelectionPanel();
+//	positionOffset = [-selectionPanelObj.GetWidth() / 2.0, -selectionPanelObj.GetHeight() / 3.0, mViveController.GetDepth() / 3.0];
+//	rotation = 90;
+//	rotationAxis = [0, 1, 0];
+//	
+//	aadd(mPanels, selectionPanelObj);
+//	aadd(mPanelsPositionOffset, positionOffset);
+//	aadd(mPanelsRotation, rotation);
+//	aadd(mPanelsRotationAxis, rotationAxis);
+}
+
+function ToolsMenu::UpdateLogic(isVRon, rayOrigin, rayEnd)
+{
+	var contactDistance = CameraGetCurrent().GetZFar();
+	var contactPoint;
+	var panelIndex = -1;
+	
+	// I iterate over all the panels to update their position and to check intersections
+	for(var i = 0; i < len(mPanels); i++)
+	{
+		var panel = mPanels[i];
+		
+		// Updating the position of the panel with respect to the menu controller
+		panel.SetPosition(mViveController.LocalToWorld(mPanelsPositionOffset[i]));
+		panel.SetRotationMatrix(mViveController.GetRotationMatrix());
+		panel.Rotate(mPanelsRotation[i], mPanelsRotationAxis[i]);
+		
+		var findContact = false;
+		var contactPointTmp;
+		
+		// Now I need to check if the action controller intersects this panel
+		if(panel.IsColliding(rayOrigin, rayEnd, &contactPointTmp))
+		{
+			// If there was an intersection there might be another panel which is actually closer to the action controller; so I need
+			// to check if the distance of this panel is lower than the previous distance found (if there was one)
+			var distance = Modulus(rayOrigin - contactPointTmp);
+			
+			// If this panel is closer than the one found before, I save some info
+			if(distance < contactDistance)
+			{
+				contactPoint = contactPointTmp;
+				contactDistance = distance;
+				panelIndex = i;
+			}
+		}
+				
+		// I update the logic of the panel (currently it's only the position of the icons)
+		panel.UpdateLogic(isVRon);
+	}
+	
+	// If a panel was intersected, I check if any icon was intersected, and save the contact point for later (it will be used
+	// by the MenuController class to pass it to the ActionController class to draw the ray
+	if(panelIndex != -1)
+	{
+		mPanels[panelIndex].FindIntersection(rayOrigin, rayEnd);
+		mIntersectionPoint = contactPoint;
+	}
+	else
+		mIntersectionPoint = Void;
+}
+
+/*
+ * This function returns the contact point found in the last update, or Void if none was found
+ */
+function ToolsMenu::IsIntersectionFound()
+{
+	return mIntersectionPoint;
+}
+
+function ToolsMenu::Draw()
+{
+	for(var i = 0; i < len(mPanels); i++)
+	{
+		mPanels[i].Draw();
+	}
+}
+
+function ToolsMenu::GetObj()
+{
+	return mToolsMenu.GetObj();
+}
+
+//function ToolsMenu::SetActionAvailable(isActionAvailable)
+//{
+//	mViveController.SetActionAvailable(isActionAvailable);
+//}
+
+function ToolsMenu::SetPosition(position)
+{
+	mToolsMenu.SetPosition(position);
+}
+
+function ToolsMenu::GetPosition()
+{
+	return mToolsMenu.GetPosition();
+}
+
+function ToolsMenu::SetRotationMatrix(matrix)
+{
+	mToolsMenu.SetRotationMatrix(matrix);
+}
+
+function ToolsMenu::GetRotationMatrix()
+{
+	return mToolsMenu.GetRotationMatrix();
+}
+
+
+function ToolsMenu::Rotate(angle, x, y, z)
+{
+	mToolsMenu.Rotate(angle, x, y, z);
+}
+
+function ToolsMenu::SetRotation(angle, x, y, z)
+{
+	mToolsMenu.SetRotation(angle, x, y, z);
+}
+
+function ToolsMenu::LocalToWorld(point)
+{
+	return mToolsMenu.LocalToWorld(point);
+}
+
+function ToolsMenu::Hide()
+{
+	mToolsMenu.Hide();
+}
+
+function ToolsMenu::Unhide()
+{
+	mToolsMenu.Unhide();
+}
+
+function ToolsMenu::SetScale(x, y, z)
+{
+	mToolsMenu.SetScale(x, y, z);
+}
+
+//function ToolsMenu::IsVisible()
+//{
+//	return mViveController.IsVisible();
+//}
+
+function ToolsMenu::Translate(transl)
+{
+	mToolsMenu.Translate(transl);
+}
+
+function ToolsMenu::IsCollidingBBox(object)
+{
+	return mToolsMenu.IsCollidingBBox(object);
+}

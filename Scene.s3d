@@ -1,0 +1,251 @@
+#include "SkyBox.s3d"
+
+class Scene
+{
+	var mIsVRon;
+	
+	// Manager for user inputs
+	var mInputManager;
+	
+	// "Animator" object; used to create transitions and rotations for the objects
+	var mAnimator;
+	
+	// Active camera
+	var mCamera;
+	
+	// Lights used to render the scene, and their positions
+	var mLight0;
+	var mLight1;
+	var mLight2;
+	var mLight0Position;
+	var mLight1Position;
+	var mLight2Position;
+	var mLight0Diffuse;
+	var mLight1Diffuse;
+	var mLight2Diffuse;
+	
+//	// Array containing the Vive controllers (ViveController objects), if VR is on
+//	var mControllersArray;
+	var mMenuController;
+	var mActionController;
+	
+	// Offset used for translating objects; a better description can be found in the GameManager class. The "previous" version is used for the elevator ride
+	var mOpenglTranslationOffset;
+
+	// This variable holds the index of the controller currently being used for drawing (it's 0 if the player isn't drawing)
+	var mControllerBeingUsedIndex;
+	
+	
+	var mSkyBox;
+
+	// Debug controller when no VR is available; a controller is needed to find collisions with the DrawingConnector objects
+	var mDebugController;
+	var mDebugControllerHidden;
+	var mDebugKeyHit;
+	
+	// Public functions
+	Init(lights, openglTranslationOffset);
+	Render();
+	UpdateLogic(dt);
+	IsPointedPositionValid(rayOrigin, rayEnd, contactPoint, normal);
+	GetOpenglTransformOffset();
+	SetOpenglTransformOffset(mOpenglTranslationOffset);
+	SetupOpenglLights();
+};
+
+
+/*
+ * Constructor. Takes as parameter a boolean that states whether VR is on or not, the input manager of the application and the sound manager
+ */
+function Scene::Scene(isVRon, inputManager)
+{		
+	mIsVRon = isVRon;
+	
+	mInputManager = inputManager;
+		
+	// Creating the object that will handle transitions and rotations of objects
+	mAnimator = Animator();
+	
+	// Initially no controller is being used
+	mControllerBeingUsedIndex = 0;
+	
+//	mControllersArray = {};
+		
+	if(mIsVRon)
+	{
+//		aadd(mControllersArray, mInputManager.GetController(1));
+//		aadd(mControllersArray, mInputManager.GetController(2));
+		mMenuController = MenuController(mInputManager.GetController(1));
+		mActionController = ActionController(mInputManager.GetController(2));
+	}
+	else
+	{
+		// If no VR is on, I create a debug controller, needed to check collisions. It will work just like a real controller, for the logic of the game I mean
+//		mDebugController = ViveController(1);
+		var viveControllerObj1 = ViveController(1);
+		var viveControllerObj2 = ViveController(2);
+		mDebugController = MenuController(viveControllerObj1);
+		mDebugControllerHidden = false;
+		mDebugKeyHit = false;
+		mDebugController.SetRotation(90, 0, 1, 0);
+		
+		mMenuController = mDebugController;
+		mActionController = ActionController(viveControllerObj2);
+//		aadd(mControllersArray, mDebugController);
+	}
+	
+	// Creating skybox
+	mSkybox = SkyBox();
+	mSkyBox.LoadTextures({"Textures/posx.jpg", "Textures/negx.jpg", "Textures/posz.jpg", "Textures/negz.jpg", "Textures/posy.jpg", "Textures/negy.jpg"});
+}
+
+
+
+function Scene::Init(lights, openglTransformOffset)
+{	
+	mOpenglTranslationOffset = openglTransformOffset;
+	
+	foreach(var light in lights)
+		light.Disable();
+		
+	mLight0Diffuse = [1, 1, 1];
+	mLight1Diffuse = [1, 1, 1];
+	mLight2Diffuse = [1, 1, 1];
+	
+	mLight0Position = [10.0 * SCALE_FACTOR, 10.0 * SCALE_FACTOR, 10.0 * SCALE_FACTOR];
+	mLight1Position = [-10.0 * SCALE_FACTOR, 10.0 * SCALE_FACTOR, 10.0 * SCALE_FACTOR];
+	mLight2Position = [10.0 * SCALE_FACTOR, 10.0 * SCALE_FACTOR, -10.0 * SCALE_FACTOR];
+		
+	mLight0 = lights[0];
+	mLight0.SetPosition(mLight0Position);
+	mLight0.SetDiffuse(mLight1Diffuse.x, mLight1Diffuse.y, mLight1Diffuse.z);
+	mLight0.Enable();
+	
+	mLight1 = lights[1];
+	mLight1.SetPosition(mLight1Position);
+	mLight1.SetDiffuse(mLight1Diffuse.x, mLight1Diffuse.y, mLight1Diffuse.z);
+	mLight1.Enable();
+	
+	mLight2 = lights[2];
+	mLight2.SetPosition(mLight2Position);
+	mLight2.SetDiffuse(mLight1Diffuse.x, mLight1Diffuse.y, mLight1Diffuse.z);
+	mLight2.Enable();
+	
+	// Retrieving the input manager and setting the initial camera's position
+	mCamera = mInputManager.GetActiveCamera();
+}
+
+
+/* ****************************************************** *
+ * **************** RENDER METHODS ********************** *
+ * ****************************************************** */
+
+
+/*
+ * Render method
+ */
+function Scene::Render()
+{	
+	// If the user teleported modifying the mOpenglTranslationOffset, the lights will be in the wrong places. So at each frame I reset their 
+	// position, but note that I'm not setting the position acoordint to the offset: since in the GameManager the offset was used for the glTranslate(), at
+	// this point the world is already moved, and since I'm moving the light directly with opengl (so that the effect can be seen also with the Vive),
+	// I don't need to add the offset to the position, it's already taken care of
+	glLight(GL_LIGHT0, GL_POSITION, [mLight0Position.x, mLight0Position.y, mLight0Position.z, 1.0]); 
+ 	glLight(GL_LIGHT1, GL_POSITION, [mLight1Position.x, mLight1Position.y, mLight1Position.z, 1.0]); 
+ 	glLight(GL_LIGHT2, GL_POSITION, [mLight2Position.x, mLight2Position.y, mLight2Position.z, 1.0]);
+		
+	var cameraPosition = mCamera.GetPosition() - mOpenglTranslationOffset;
+
+	mSkyBox.Render(cameraPosition);
+			
+	mMenuController.Draw();
+	mActionController.Draw();
+}
+
+
+/* ****************************************************** *
+ * **************** LOGIC METHODS ********************** *
+ * ****************************************************** */
+  
+/*
+ * Updates the logic of the game
+ * 
+ * dt: (float) delta time, i.e. the time between the last update and this one
+ */
+function Scene::UpdateLogic(dt)
+{
+	// First off, let's update the player's position and orientation
+	mInputManager.UpdateCamera();
+	mInputManager.UpdateControllers(mOpenglTranslationOffset);
+	
+	var cameraPosition = mCamera.GetPosition() - mOpenglTranslationOffset;
+	
+	// I put the controller in front of the camera, for the debugging purposes, if VR isn't on
+	if(!mIsVRon)
+	{
+		mMenuController.SetPosition(cameraPosition + mCamera.GetDirection() * 3 * SCALE_FACTOR);
+		mActionController.SetPosition(cameraPosition + mCamera.GetDirection() * 3 * SCALE_FACTOR);
+	}
+	
+	mActionController.UpdateLogic(mIsVRon);
+	mMenuController.UpdateLogic(mIsVRon, mActionController);
+		
+	// I update the methods of the managers
+	mAnimator.UpdateTransitions(dt);
+}
+
+
+/*
+ * This method checks where the given ray intersects the world, and returns true if that position is valid for the player
+ * 
+ * rayOrigin: (vector) starting point of the ray
+ * rayEnd: (vector) starting point of the ray
+ * contactPoint: (vector) if the ray intersects something, this parameter will be filled up with the information (needs to be passed as reference, with &)
+ * normal: (vector) if the ray intersects something, this parameter will be filled up with the normal to the intersected plane (needs to be passed as reference, with &)
+ * isWall: (boolean) if the ray intersects something, this parameter will be true if the interception was in a wall (needs to be passed as reference, with &)
+ */
+function Scene::IsPointedPositionValid(rayOrigin, rayEnd, contactPoint, normal)
+{
+	var intersectedPlane = -1;
+
+	normal = [0, 1, 0];
+	contactPoint = FindIntersectionInPlane(rayOrigin, rayEnd, [0, 0, 0], normal);
+	
+	// If a in intersection was found, I procede
+	if(contactPoint != Void)
+	{
+		// I need to check if the position found is in the room; since the plane is infinite, the intersection could be anywhere. To make sure that
+		// we check the point correctly, I move the point up a little bit for the check
+		contactPoint.y += 1 * SCALE_FACTOR;
+		
+		intersectedPlane = 0;
+	}
+	
+	return intersectedPlane == 0;
+}
+
+function Scene::GetOpenglTransformOffset()
+{
+	return mOpenglTranslationOffset; 
+}
+
+function Scene::SetOpenglTransformOffset(openglTransformOffset)
+{
+	mOpenglTranslationOffset = openglTransformOffset;
+}
+
+function Scene::SetupOpenglLights()
+{
+	glEnable(GL_LIGHT0);
+	glEnable(GL_LIGHT1);
+	glEnable(GL_LIGHT2);
+	
+	// Note: might need to SUBTRACT mOpenglTranslationOffset to each axis position
+	glLight(GL_LIGHT0, GL_POSITION, [mLight0Position.x, mLight0Position.y, mLight0Position.z, 1.0]); 
+ 	glLight(GL_LIGHT1, GL_POSITION, [mLight1Position.x, mLight1Position.y, mLight1Position.z, 1.0]); 
+ 	glLight(GL_LIGHT2, GL_POSITION, [mLight2Position.x, mLight2Position.y, mLight2Position.z, 1.0]); 
+ 	
+	glLight(GL_LIGHT0, GL_DIFFUSE, mLight0Diffuse); 
+	glLight(GL_LIGHT1, GL_DIFFUSE, mLight1Diffuse); 
+	glLight(GL_LIGHT2, GL_DIFFUSE, mLight2Diffuse);
+}

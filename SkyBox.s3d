@@ -1,0 +1,118 @@
+/*
+ *	Ship Race VR
+ *  (c) Carlo Casta 2007
+ *
+ *  Skybox.s3d
+ */
+ 
+class SkyBox
+{
+	var tex_skybox;
+	var boxSize;
+	var boxHSize;
+	var centerBox;
+	
+	LoadTextures(files);
+	SetSize(newSize);
+	Render(centerBox);
+};
+
+function SkyBox::SkyBox()
+{
+	SetSize(110);
+	tex_skybox = Array(6);
+}
+
+function SkyBox::SetSize(newSize)
+{
+	boxSize = newSize;
+	boxHSize = boxSize / 2;
+}
+
+function SkyBox::LoadTextures(files)
+{
+	for (var i = 0; i < 6; ++i)
+		tex_skybox[i] = CVmTexture(files[i]);
+}
+
+function SkyBox::Render(centerBox)
+{
+#define SK_FRONT		0
+#define SK_BACK			1
+#define SK_LEFT			2
+#define SK_RIGHT		3
+#define SK_UP			4
+#define SK_DOWN			5
+
+
+	glPushMatrix();
+	glDisable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+	glDisable(GL_LIGHTING);
+	glColor(1, 1, 1);
+	
+	SetActiveTexture(tex_skybox[SK_FRONT], VR_BILINEAR_FILTER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glBegin(GL_QUADS);
+		glTexCoord(0, 0); glVertex(centerBox.x + boxHSize, centerBox.y + boxHSize, centerBox.z - boxHSize);
+		glTexCoord(1, 0); glVertex(centerBox.x - boxHSize, centerBox.y + boxHSize, centerBox.z - boxHSize);
+		glTexCoord(1, 1); glVertex(centerBox.x - boxHSize, centerBox.y - boxHSize, centerBox.z - boxHSize);
+		glTexCoord(0, 1); glVertex(centerBox.x + boxHSize, centerBox.y - boxHSize, centerBox.z - boxHSize);
+	glEnd();
+	
+	SetActiveTexture(tex_skybox[SK_BACK], VR_BILINEAR_FILTER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glBegin(GL_QUADS);
+		glTexCoord(0, 0); glVertex(centerBox.x - boxHSize, centerBox.y + boxHSize, centerBox.z + boxHSize);
+		glTexCoord(1, 0); glVertex(centerBox.x + boxHSize, centerBox.y + boxHSize, centerBox.z + boxHSize);
+		glTexCoord(1, 1); glVertex(centerBox.x + boxHSize, centerBox.y - boxHSize, centerBox.z + boxHSize);
+		glTexCoord(0, 1); glVertex(centerBox.x - boxHSize, centerBox.y - boxHSize, centerBox.z + boxHSize);
+	glEnd();
+
+	SetActiveTexture(tex_skybox[SK_LEFT], VR_BILINEAR_FILTER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glBegin(GL_QUADS);
+		glTexCoord(0, 0); glVertex(centerBox.x + boxHSize, centerBox.y + boxHSize, centerBox.z + boxHSize);
+		glTexCoord(1, 0); glVertex(centerBox.x + boxHSize, centerBox.y + boxHSize, centerBox.z - boxHSize);
+		glTexCoord(1, 1); glVertex(centerBox.x + boxHSize, centerBox.y - boxHSize, centerBox.z - boxHSize);
+		glTexCoord(0, 1); glVertex(centerBox.x + boxHSize, centerBox.y - boxHSize, centerBox.z + boxHSize);
+	glEnd();
+	
+	SetActiveTexture(tex_skybox[SK_RIGHT], VR_BILINEAR_FILTER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glBegin(GL_QUADS);
+		glTexCoord(0, 0); glVertex(centerBox.x - boxHSize, centerBox.y + boxHSize, centerBox.z - boxHSize);
+		glTexCoord(1, 0); glVertex(centerBox.x - boxHSize, centerBox.y + boxHSize, centerBox.z + boxHSize);
+		glTexCoord(1, 1); glVertex(centerBox.x - boxHSize, centerBox.y - boxHSize, centerBox.z + boxHSize);
+		glTexCoord(0, 1); glVertex(centerBox.x - boxHSize, centerBox.y - boxHSize, centerBox.z - boxHSize);
+	glEnd();
+	
+	SetActiveTexture(tex_skybox[SK_UP], VR_BILINEAR_FILTER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glBegin(GL_QUADS);
+		glTexCoord(0, 0); glVertex(centerBox.x - boxHSize, centerBox.y + boxHSize, centerBox.z - boxHSize);
+		glTexCoord(1, 0); glVertex(centerBox.x + boxHSize, centerBox.y + boxHSize, centerBox.z - boxHSize);
+		glTexCoord(1, 1); glVertex(centerBox.x + boxHSize, centerBox.y + boxHSize, centerBox.z + boxHSize);
+		glTexCoord(0, 1); glVertex(centerBox.x - boxHSize, centerBox.y + boxHSize, centerBox.z + boxHSize);
+	glEnd();
+	
+	SetActiveTexture(tex_skybox[SK_DOWN], VR_BILINEAR_FILTER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glBegin(GL_QUADS);	
+		glTexCoord(0, 0); glVertex(centerBox.x - boxHSize, centerBox.y - boxHSize, centerBox.z + boxHSize);
+		glTexCoord(1, 0); glVertex(centerBox.x + boxHSize, centerBox.y - boxHSize, centerBox.z + boxHSize);
+		glTexCoord(1, 1); glVertex(centerBox.x + boxHSize, centerBox.y - boxHSize, centerBox.z - boxHSize);
+		glTexCoord(0, 1); glVertex(centerBox.x - boxHSize, centerBox.y - boxHSize, centerBox.z - boxHSize);
+	glEnd();
+	
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+	glEnable(GL_LIGHTING);
+	glPopMatrix();
+}

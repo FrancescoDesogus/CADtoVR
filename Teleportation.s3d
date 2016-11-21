@@ -1,0 +1,359 @@
+
+class Teleportation
+{
+	var mInputManager;
+	
+	var mOpenglTranslationOffset;
+	
+	// ID for the animations used to teleport the player from one position to another
+	var mOpenglTranslationOffsetAnimationID;
+	
+	// Threshold used to determine whether to use the moving transition when teleporting or the fade-to-black transition
+	var mTeleportDistanceThreshold;
+	
+	// Boolean that is true when the user is teleporting with the fade-to-black transition
+	var mIsTeleporting;
+	
+	// This object is the circle that appears when the user wants to teleport to a destination
+	var mPositionCircleObj;
+	
+	// Radius and height of the position circle
+	var mPositionCircleRadius;
+	var mPositionCircleHeight;
+		
+	// Shader used to render the position circle
+	var mPositionCircleShader;
+	
+	// Objects that represent the play area rectangle (that is displayed as a box to create a cool shading effect). The play area is defined by the Vive's lighthouse
+	// system and it's basically the area that the player can move in safely
+	var mPlayAreaRec;
+	var mPlayAreaTeleportBox;
+	var mPlayAreaTeleportBoxHeight;
+	var mPlayAreaTeleportBoxShader;
+	
+	// Shader used to create the dashed lines when the player uses that teleportation feature
+	var mDashedLineShader;
+	
+	// Offset used by the "dashed line shader" to create the illusion that the line segments are moving
+	var mDashedLinesOffset;
+	
+	// This boolean indicates whether the user is currently pressing the secondary button for teleportation
+	var mIsPressingSecondaryButton;
+	
+	// Index of the controller being used for the teleportation
+	var mControllerBeingUsedIndex;
+	
+	
+	// Public functions
+	Init(lights, openglTranslationOffset);
+	Draw();
+	UpdateLogic(dt);
+	IsUsingTeleportation();
+	GetOpenglTransformOffset();
+	SetOpenglTransformOffset(mOpenglTranslationOffset);
+	SetupOpenglLights();
+};
+
+
+/*
+ * Constructor. Takes as parameter a boolean that states whether VR is on or not, the input manager of the application and the sound manager
+ */
+function Teleportation::Teleportation(inputManager)
+{		
+	mInputManager = inputManager;
+	
+	// Creating the position circle object, used for the teleportation feature
+	mPositionCircleRadius = 1.0 * SCALE_FACTOR;
+	mPositionCircleHeight = 0.2 * SCALE_FACTOR;
+	var positionCircleMesh = CVmNewMesh(VRP_CYLINDER, 30, mPositionCircleRadius, mPositionCircleHeight, 1);  
+	positionCircleMesh.Normalize(4 * SCALE_FACTOR);
+	mPositionCircleObj = CVmObj(positionCircleMesh);
+	
+	// Booleans used for the teleportation feature
+	mIsPositionValid = false;
+	mIsPressingSecondaryButton = false;
+	
+	// Initially, no controller is being used
+	mControllerBeingUsedIndex = 0;
+	
+	// Shaders used to render the dashed line and the circle for the teleportation feature
+	mDashedLineShader = CVmShaderProgram("Shaders/dashedLineShader.glsl");
+	mPositionCircleShader = CVmShaderProgram("Shaders/positionCircleShader.glsl");
+	mPlayAreaTeleportBoxShader = CVmShaderProgram("Shaders/playAreaTeleportBoxShader.glsl");
+	mPlayAreaBoxShader = CVmShaderProgram("Shaders/playAreaBoxShader.glsl");
+
+	
+	// Offset used for the teleportation feature rendering
+	mDashedLinesOffset = 0;
+	
+	// Getting the play area size for the Vive; if the Vive isn't on, a default size is chosen. This method returns a vector containing with and depth of the area
+	mPlayAreaRec = mInputManager.GetPlayAreaSize();
+	
+	// Height of the play area box
+	mPlayAreaTeleportBoxHeight = 4.0 * SCALE_FACTOR;
+	
+	// Creating the play area box
+	var playAreaTeleportBoxMesh = CVmNewMesh(VRP_BOX, 1, [-mPlayAreaRec.x / 2.0, -mPlayAreaTeleportBoxHeight/2.0, -mPlayAreaRec.y / 2.0], [mPlayAreaRec.x/2.0, mPlayAreaTeleportBoxHeight/2, mPlayAreaRec.y / 2.0]);
+	mPlayAreaTeleportBox = CVmObj(playAreaTeleportBoxMesh);
+	
+	mPlayAreaBoxHeight = 20.0 * SCALE_FACTOR;
+	
+	mIsTeleporting = false;
+	mTeleportDistanceThreshold = 30.0 * SCALE_FACTOR;
+}
+
+function Teleportation::Draw(raycastOrigin)
+{
+	// Here we render the positional circle, if the user is pressing the button. Since it's common for every level, it's better to do it here
+	if(mControllerBeingUsedIndex != 0)
+	{		
+		// I also render a line from the controller to the position circle.
+		// Note: need to modify the code so that if the Vive is active the line starts from the controller, not the camera
+//		var raycastOrigin;
+		
+//		if(mIsVRon)
+//			raycastOrigin = mInputManager.GetController(mControllerBeingUsedIndex).GetPosition();
+//		else 
+//			raycastOrigin = mCamera.GetPosition() - mOpenglTranslationOffset - [-0.1 * SCALE_FACTOR, 0.1 * SCALE_FACTOR, 0.0 * SCALE_FACTOR];
+		
+		// The endpoint is at the top of the cylinder that is the position "circle"
+		var raycastEnd = mPositionCircleObj.LocalToWorld([0, mPositionCircleHeight, 0]); 
+												
+		var color;
+		
+		// If the position is valid the ray is blue, otherwise it's red
+		if(mIsPositionValid)
+			color = [0, 0, 1];
+		else
+			color = [1, 0, 0];
+		
+		// Rendering of the ray
+		mDashedLineShader.Start();
+			// Parameters for the ray's shader
+			mDashedLineShader.SetParameter("sourcePosition", raycastOrigin);
+			mDashedLineShader.SetParameter("lineLength", Modulus(raycastEnd - raycastOrigin));
+			mDashedLineShader.SetParameter("color", color);
+			mDashedLineShader.SetParameter("ticksLength", 0.17 * SCALE_FACTOR);
+			mDashedLineShader.SetParameter("offset", mDashedLinesOffset);
+			
+			glLineWidth(2.5); 
+			
+			// I draw the ray as a simple opengl line
+			glBegin(GL_LINES);
+				glVertex(raycastOrigin);
+				glVertex(raycastEnd);		
+			glEnd();
+		mDashedLineShader.Stop();
+								
+		mPositionCircleShader.Start();
+			// Parameters for the circle's shader
+			mPositionCircleShader.SetParameter("color", color);
+			mPositionCircleShader.SetParameter("radius", mPositionCircleRadius * 2.0);
+			mPositionCircleShader.SetParameter("innerCircleTickness", 0.06 * SCALE_FACTOR);
+			mPositionCircleShader.SetParameter("outerCircleTickness", 0.16 * SCALE_FACTOR);
+			mPositionCircleShader.SetParameter("offset", mDashedLinesOffset * 300.0); // The offset needs to be higher, otherwise the lines move slowly
+			mPositionCircleShader.SetParameter("ticksNumber", 15.0);
+
+			mPositionCircleObj.Draw();
+		mPositionCircleShader.Stop();
+		
+		// If the position is valid I also draw the play area box
+		if(mIsPositionValid)
+		{
+			mPlayAreaTeleportBoxShader.Start();
+				mPlayAreaTeleportBoxShader.SetParameter("color", color);
+				mPlayAreaTeleportBoxShader.SetParameter("width", mPlayAreaRec.x);
+				mPlayAreaTeleportBoxShader.SetParameter("depth", mPlayAreaRec.y);
+				mPlayAreaTeleportBoxShader.SetParameter("height", mPlayAreaTeleportBoxHeight);
+				mPlayAreaTeleportBoxShader.SetParameter("outerEdgesTickness", 0.06 * SCALE_FACTOR);
+				
+				// In order to render the box correctly with the shader, I have to render first the back faces and then the front faces.
+				// If I only draw the front faces, some fragments will have transparency, but behind there wouldn't be anything since the back
+				// faces wouldn't be drawn. By drawing them first, I can assure that the transparencies of the fragments will be consistent
+				glCullFace(GL_FRONT);
+				mPlayAreaTeleportBox.Draw();
+				glCullFace(GL_BACK);
+				mPlayAreaTeleportBox.Draw();
+			mPlayAreaTeleportBoxShader.Stop();
+		}
+		
+		// I increment the offset used for the rendering of the ray and the circle, so that in the next frame the ticks position will shift
+		mDashedLinesOffset += 0.01 * SCALE_FACTOR;
+	}
+	// If we don't have to draw the ray, I reset its offset, so that it doesn't increment too much in the course of the game
+	else
+		mDashedLinesOffset = 0;
+}
+
+
+function Teleportation::UpdateLogic(openglTranslationOffset)
+{
+	var usingController1 = mInputManager.IsPressingSecondaryButton(1);
+	var usingController2 = mInputManager.IsPressingSecondaryButton(2);
+	
+	
+	var firstTimeUsingController = (usingController1 || usingController2) && mControllerBeingUsedIndex == 0;
+	var wasUsingController1 = (usingController1 && mControllerBeingUsedIndex == 1);
+	var wasUsingController2 = (usingController2 && mControllerBeingUsedIndex == 2);
+	
+	// Checking the user is pressing the button to teleport
+	if(firstTimeUsingController || wasUsingController1 || wasUsingController2)
+	{				
+		if(firstTimeUsingController)
+			mControllerBeingUsedIndex = usingController1 ? 1 : 2;
+		
+		// I get the camera's position- minus the offset so we get the actual position of the player in the world
+		// NOTE: if the Vive is active, this shouldn't be the camera's, but the controller's position. Need to modify the code
+		var raycastOrigin;
+		var raycastEnd;
+		
+		// Computing the ray that goes to infinity: I'm going to check were it collides
+		if(mIsVRon)
+		{
+			var controller = mInputManager.GetController(mControllerBeingUsedIndex);
+			raycastOrigin = controller.GetPosition();
+			raycastEnd = raycastOrigin + controller.GetDirection() * CameraGetCurrent().GetZFar();
+		}
+		else
+		{
+			raycastOrigin = CameraGetPosition() - openglTranslationOffset;
+			raycastEnd = raycastOrigin + mCamera.GetDirection() * CameraGetCurrent().GetZFar();
+		}
+			
+		
+		var contactPoint;
+		var normal;
+		
+		// I ask the level to check where the ray intersects and if that position is valid. I'm passing the reference to some objects
+		// so that the level will put in there the point of interception, the normal of the object and whether it's a wall or not
+		mIsPositionValid = mScene.IsPointedPositionValid(raycastOrigin, raycastEnd, &contactPoint, &normal);
+		
+		
+		if(contactPoint != Void)
+		{
+			// If the position is valid I reset the circle's rotation, in case it was previously rotated (I'm doing this since I know that valid
+			// positions are for floors, and the circle as default is parallel to the floor
+			if(mIsPositionValid)
+				mPositionCircleObj.SetRotation(0, 0, 1, 0);
+			// If it's not valid, I check the normal of the contact point in order to rotate the circle accordingly
+			else
+			{
+				if(abs(normal.x) == 1)
+					mPositionCircleObj.SetRotation(90, 0, 0, 1);
+				else if(abs(normal.z) == 1)
+					mPositionCircleObj.SetRotation(90, 1, 0, 0);
+				else
+					mPositionCircleObj.SetRotation(0, 0, 1, 0);
+			}
+			
+			// Finally I set the position of the circle, subtracting the direction vector so that the circle is not really on the plane but a bit
+			// closer to the user (to avoid Z fighting with the intersected plane)
+			mPositionCircleObj.SetPosition(contactPoint - mCamera.GetDirection() * SCALE_FACTOR);
+			
+			// I also position the play area box in that point, lifting it a bit so that it's completely above the ground (remember, the box
+			// has the origin in its center). I then translate the box, moving it so that it shows where the player is in the world with respect
+			// to the play area; where the player is can be seen directly by looking at the position of the camera
+			mPlayAreaTeleportBox.SetPosition(contactPoint + [0, mPlayAreaTeleportBoxHeight / 2.0 + 0.02 * SCALE_FACTOR, 0]);
+			mPlayAreaTeleportBox.Translate(-mCamera.GetPosition().x, 0, -mCamera.GetPosition().z);
+		}
+	}
+	// If the user isn't pressing the button...
+	else
+	{
+		// If the user WAS pressing the button, now he's not anymore
+		if(mControllerBeingUsedIndex != 0)
+		{
+			// If the last position of the circle was valid, I update the opengl offset
+			if(mIsPositionValid)
+			{
+				// I need to check which teleport transition to use: the moving animation or the fade-to-black animation. The choice is determined
+				// by the distance; if it's too long, I use the fade-to-black animation to avoid motion sickness. So now I need to determine
+				// the distance from the player to the desired position
+				var playerPos = mCamera.GetPosition() - mOpenglTranslationOffset;
+				var circlePos = mPositionCircleObj.GetPosition();
+				
+				// I only care about the x and z values for the distance, so the y is put to 0
+				playerPos.y = 0;
+				circlePos.y = 0;
+				
+				var distance = Modulus(playerPos - circlePos);
+				
+				// If the distance is below the threshold, I create the moving animation
+				if(distance < mTeleportDistanceThreshold)
+				{
+					// The new position has the same y as the opengl offset (I only want to move along the x and z axis after all), 
+					// and as x and z it has the difference between the player's position and the desired position
+					var cameraPosition = mCamera.GetPosition();
+					var newPos = [0.0, mOpenglTranslationOffset.y, 0.0];
+					newPos.x = cameraPosition.x - mPositionCircleObj.GetPosition().x;
+					newPos.z = cameraPosition.z - mPositionCircleObj.GetPosition().z;
+						
+					// Normally the animation is direct from the player's position to the desired one. But if the player's controller is, for example,
+					// after a wall and it points directly behind it (a position that can't be directly seen by the player's point of view), 
+					// the player would move through the wall to get to that position. To avoid that, I check whether the desired position
+					// can be directly seen by the player's position; if that's so, I move directly to it. Otherwise, I first move
+					// where the controller was, and then to the desired position. 
+					// So first, I need to check whether the player can see the desired point
+					var raycastOrigin = mCamera.GetPosition() - mOpenglTranslationOffset;
+					var raycastEnd = raycastOrigin + mCamera.GetDirection() * mCamera.GetZFar();
+					
+					var contactPoint;
+					var normal;
+						
+					var isPositionValid = mScene.IsPointedPositionValid(raycastOrigin, raycastEnd, &contactPoint, &normal);
+					
+					mAnimator.CreateGenericTransition(mOpenglTranslationOffsetAnimationID, mOpenglTranslationOffset, newPos, 0.2, 3);
+				}
+				// If the distance to the desired point is too great, I teleport using the fade-to-black transition
+				else
+				{
+					// When the user teleports there is a very quick fade effect to black and then to white; in order to make it look cool, I need to
+					// teleport the player when the fade reaches black (i.e. the screen is completely black). I do this only if there is no current
+					// fading animation active (for example, when the game is starting and there is a "fade in", I can't create the animation otherwise
+					// it overwrites the old animation). So I check if there is no current animation, and in that case I create one
+					if(!mAnimator.HaveTransition(mFadeAnimationID, 6))
+					{
+						// At start, the fade animation is composed of 1 animation from white to black, so that later I can check if the animation ended
+						// and if that is so, I teleport the user and create another animation, this time from black to white. I don't create
+						// a waypoint animation because it caused artifacts, maybe because the animation is very fast
+						mAnimator.CreateGenericTransition(mFadeAnimationID, 0.0, 1.0, 0.15);
+						
+						// I state that the user is teleporting, so that now I can check when the screen becomes black
+						mIsTeleporting = true;
+					}
+					// This is the case where the animation doesn't have to be used, and the player needs to be teleported instantly
+					else
+					{
+						// The new offset is the difference between the player's position and the new position of the circle;
+						// I'm only udpating the x and y values since the y should stay the same
+						var cameraPosition = mCamera.GetPosition();
+						mOpenglTranslationOffset.x = cameraPosition.x  - mPositionCircleObj.GetPosition().x;
+						mOpenglTranslationOffset.z = cameraPosition.z  - mPositionCircleObj.GetPosition().z;
+						
+						// I notify the current level that the offset has changed
+						mScene.SetOpenglTransformOffset(&mOpenglTranslationOffset);
+					}
+				}
+			}
+			
+			mControllerBeingUsedIndex = 0;
+		}
+	}
+	
+	
+	if(mAnimator.HaveTransition(mOpenglTranslationOffsetAnimationID, 6))
+	{	mOpenglTranslationOffset = mAnimator.GetCurrentStateInTransition(mOpenglTranslationOffsetAnimationID, 6);
+		// I notify the current level that the offset has changed
+		mScene.SetOpenglTransformOffset(&mOpenglTranslationOffset);
+	}
+}
+
+function Teleportation::GetOpenglTransformOffset()
+{
+	return mOpenglTranslationOffset; 
+}
+
+function Teleportation::SetOpenglTransformOffset(openglTransformOffset)
+{
+	mOpenglTranslationOffset = openglTransformOffset;
+}

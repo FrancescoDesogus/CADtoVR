@@ -1,0 +1,226 @@
+ 
+class ActionController
+{
+	var mViveController;
+	var mActionController;
+	var mControllerIndex;
+	
+	var mPanelDistanceToController;
+	var mToolPanelWidth;
+	var mToolPanelHeight;
+	var mToolPanelDepth;
+	
+	var mRayOrigin;
+	var mRayEnd;
+	var mDrawRay;
+	
+	
+	// Public functions
+	Draw();
+	GetObj();
+	GetIndex();
+	SetActionAvailable(isActionAvailable);
+	GetControllerTipCoordinates();
+	GetDirection();
+	SetPosition(position);
+	Translate(transl);
+	GetPosition();
+	SetRotationMatrix(matrix);
+	GetRotationMatrix();
+	Rotate(angle, x, y, z);
+	SetRotation(angle, x, y, z);
+	LocalToWorld(point);
+	Hide();
+	Unhide();
+	SetScale(x, y, z);
+	IsVisible();
+	IsCollidingBBox(object);
+	
+	UpdateLogic(debugMode);
+	SetDrawRay(drawRay, rayOrigin, rayEnd);
+};
+
+
+function ActionController::ActionController(viveController)
+{
+	mViveController = viveController;
+	mControllerIndex = mViveController.GetIndex();
+	
+	mRayOrigin = [0, 0, 0];
+	mRayEnd = [0, 0, 0];
+	mDrawRay = false;
+}
+
+function ActionController::UpdateLogic(debugMode)
+{
+	if(!debugMode)
+	{
+		static var rotX = 0;
+		static var rotY = 0;
+		static var rotZ = 0;
+			
+		if(KeyPressed(VK_NUMPAD4))
+			rotX += 1;
+		
+		if(KeyPressed(VK_NUMPAD6))
+			rotX -= 1;
+			
+		if(KeyPressed(VK_NUMPAD8))
+			rotY += 1;
+		
+		if(KeyPressed(VK_NUMPAD5))
+			rotY -= 1;
+			
+		if(KeyPressed(VK_NUMPAD7))
+			rotZ += 1;
+		
+		if(KeyPressed(VK_NUMPAD9))
+			rotZ -= 1;
+		
+		mViveController.SetRotation(0, 1, 0, 0);
+		mViveController.Rotate(rotY, 1, 0, 0);
+		mViveController.Rotate(rotX, 0, 1, 0);
+		mViveController.Rotate(rotZ, 0, 0, 1);
+		
+		static var xOffset = 0;
+		static var yOffset = 0;
+		static var zOffset = 0;
+		
+		
+		if(KeyPressed(VK_RIGHT))
+			xOffset += 0.05 * SCALE_FACTOR;
+		
+		if(KeyPressed(VK_LEFT))
+			xOffset -= 0.05 * SCALE_FACTOR;
+			
+		if(KeyPressed(VK_DOWN))
+			zOffset += 0.05 * SCALE_FACTOR;
+		
+		if(KeyPressed(VK_UP))
+			zOffset -= 0.05 * SCALE_FACTOR;
+			
+//		if(KeyPressed(VK_NUMPAD1))
+//			yOffset += 1.0 * SCALE_FACTOR;
+//		
+//		if(KeyPressed(VK_RSHIFT))
+//			yOffset -= 1.0 * SCALE_FACTOR;
+//			
+		mViveController.SetPosition(mViveController.GetPosition() + [xOffset, yOffset, zOffset]);
+	}
+}
+
+function ActionController::SetDrawRay(drawRay, rayOrigin, rayEnd)
+{
+	mDrawRay = drawRay;
+	mRayOrigin = rayOrigin;
+	mRayEnd = rayEnd;
+}
+
+function ActionController::Draw()
+{
+	mViveController.Draw(VR_NO_CULLING);
+	
+	if(mDrawRay)
+	{
+		glLineWidth(3); 		
+		glColor([0, 0, 1]); 
+		
+		// I draw the ray as a simple opengl line
+		glBegin(GL_LINES);
+			glVertex(mRayOrigin);
+			glVertex(mRayEnd);		
+		glEnd();
+	}
+}
+
+function ActionController::GetObj()
+{
+	return mViveController.GetObj();
+//	return mActionController;
+}
+
+function ActionController::GetIndex()
+{
+	return mControllerIndex;
+}
+
+function ActionController::SetActionAvailable(isActionAvailable)
+{
+	mViveController.SetActionAvailable(isActionAvailable);
+}
+
+function ActionController::GetControllerTipCoordinates()
+{
+	return mViveController.GetControllerTipCoordinates();
+}
+
+function ActionController::GetDirection()
+{
+	return mViveController.GetDirection();
+}
+
+function ActionController::SetPosition(position)
+{
+	mViveController.SetPosition(position);
+}
+
+function ActionController::GetPosition()
+{
+	return mViveController.GetPosition();
+}
+
+function ActionController::SetRotationMatrix(matrix)
+{
+	mViveController.SetRotationMatrix(matrix);
+}
+
+function ActionController::GetRotationMatrix()
+{
+	return mViveController.GetRotationMatrix();
+}
+
+
+function ActionController::Rotate(angle, x, y, z)
+{
+	mViveController.Rotate(angle, x, y, z);
+}
+
+function ActionController::SetRotation(angle, x, y, z)
+{
+	mViveController.SetRotation(angle, x, y, z);
+}
+
+function ActionController::LocalToWorld(point)
+{
+	return mViveController.LocalToWorld(point);
+}
+
+function ActionController::Hide()
+{
+	mViveController.Hide();
+}
+
+function ActionController::Unhide()
+{
+	mViveController.Unhide();
+}
+
+function ActionController::SetScale(x, y, z)
+{
+	mViveController.SetScale(x, y, z);
+}
+
+function ActionController::IsVisible()
+{
+	return mViveController.IsVisible();
+}
+
+function ActionController::Translate(transl)
+{
+	mViveController.Translate(transl);
+}
+
+function ActionController::IsCollidingBBox(object)
+{
+	return mViveController.IsCollidingBBox(object);
+}

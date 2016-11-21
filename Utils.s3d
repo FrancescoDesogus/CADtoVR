@@ -1,0 +1,250 @@
+function Print(strings, objects)
+{
+	if(valtype(strings) == "A")
+	{
+			output(strings[0] + ": ");
+		output(objects[0]);
+		
+		for(var i = 1; i < len(strings); i++)
+		{
+			output("; " + strings[i] + ": ");
+			output(objects[i]);
+		}
+		
+		output("\n");
+	}
+	else
+	{
+		output(strings + ": ");
+		output(objects);
+		output("\n");
+	}
+}
+
+// Doesn't support arrays
+function PrintDebugBox(strings, objects)
+{
+	var totalText = "";
+	
+	if(valtype(strings) == "A")
+	{
+		for(var i = 0; i < len(strings); i++)
+		{
+			totalText += strings[i] + ": ";
+			
+			if(valtype(objects[i]) == "B")
+				totalText += objects[i] ? "True" : "False";
+			else
+				totalText += str(objects[i]);
+				
+			totalText += ";\n ";
+		}
+		
+		totalText += "\n";
+	}
+	else
+	{
+		totalText = strings;
+	
+		if(valtype(objects) == "B")
+			totalText += objects ? "True" : "False";
+		else
+			totalText += str(objects);
+	}
+	
+	ConsoleColor(1, 1, 0, 0.5);
+	ConsoleFilledRect(0.4, 0.94, 0.2, 0.05);
+	ConsoleColor(0, 0, 0, 1);
+	ConsoleFont("Arial", 20);
+	ConsoleText(0.40, 0.9, totalText);
+	
+}
+
+/*
+ * This function checks if a line segment intersects the given object; if it does, it returns the contact point, or Void otherwise
+ * 
+ * raycastOrigin: (vector) the start point of the line segment
+ * raycastEnd: (vector) the end point of the line segment
+ * object: (object) the object to check
+ */
+function IsObjectSelected(raycastOrigin, raycastEnd, object)
+{	
+	var contactPoint = Void;
+	
+	object.IsColliding(raycastOrigin, raycastEnd, &contactPoint);
+	
+	return contactPoint;
+}
+
+/*
+ * This function checks if a line segment intersects a plane; if it does, it returns the contact point, or Void otherwise.
+ * A line segment is defined by the start point and the end point. 
+ * A plane is defined with a point belonging to the plane and the normal to the plane
+ * 
+ * raycastOrigin: (vector) the start point of the line segment
+ * raycastEnd: (vector) the end point of the line segment
+ * planePoint: (vector) the point belonging to the plane
+ * planeNormal: (vector) the vector perpendicular to the plane
+ */
+function FindIntersectionInPlane(raycastOrigin, raycastEnd, planePoint, planeNormal)
+{
+	/*
+	 * The code and the explanation for this implementation was found here: 
+	 * https://www.youtube.com/watch?v=fIu_8b2n8ZM
+	 * https://github.com/BSVino/MathForGameDevelopers/blob/line-plane-intersection/math/collision.cpp
+	 */
+	var pointInPlane = Void;
+	
+	var v = raycastEnd - raycastOrigin;
+	var w = planePoint - raycastOrigin;
+
+	var k = (w * planeNormal) / (v * planeNormal);
+
+	// If k is between 0 and 1 there was an intersection, otherwise there wasn't
+	if(k >= 0 && k <= 1)
+		pointInPlane = raycastOrigin + k * v;
+
+	return pointInPlane;
+	
+	
+	/*
+	 * Below there is the old code, which I keep just in case; it ASSUMED that there was an intersection and it found the contact point
+	 */
+//	var pointInPlane = Void;
+//	
+//	// I first need to check if the raycast intersects the plane. To do that, I first get the direction of the raycast and I normalize it. The idea is 
+//	// to do the dot product between the direction of the raycast and the plane normal, and study the sign of the result. But this is not enough,
+//	// since the plane has a physical point where it's placed in the space, so we also need to check whether the raycast starts from one side of the plane or the other
+//	var raycastDirection = Norm(raycastOrigin - raycastEnd);
+//	
+//	// I get the direction between the starting point of the line and the plane, and normalize it. This helps me to find out on which side of the plane the ray
+//	// starts, by doing the dot product with the normal. The result will have positive values if the ray starts from one side, and negative values from the other side
+//	var directionToPlane = Norm(raycastOrigin - planePoint);
+//	
+//	// Doing the dot products
+//	var raycastNormalProduct = raycastDirection * planeNormal;
+//	var directionToPlaneNormalProduct = directionToPlane * planeNormal;
+//	
+//	// If the dot products have the same sign then the raycast is intersecting the plane. So, to check that easily I multiply the results and check the sign; if
+//	// it's positive, the ray intersects the plane, so we can look for the contact point
+//	if(raycastNormalProduct * directionToPlaneNormalProduct > 0)
+//	{
+//		/* Consider the ray as a line, with line equation r(t) = p0 + p1 * T where p0 is the starting point of the ray and p1 the ending point. To find the
+//		 * contact point on the plane, we have to find the right T and solve the equation. 
+//		 * Now consider a point q in the plane and the plane's normal n. For a point x to be on the plane this has to be true: n * (q - x) = 0 where the "*" 
+//		 * is the dot product. This has to be true because all points in the plane have to be perpendicular to n, so if we take from the point q that we
+//		 * know belongs to the plane and a random point x and take the vector that goes from one to the other, this vector has to be perpendicular to n for
+//		 * x to be on the plane; so the dot product has to be zero.
+//		 * Now, from that equation we need to substitute the "x" with the ray's equation:
+//		 * n * (q - p0 - p1 * T) = 0 --> n * (q - p0) - n * p1 * T = 0 --> n * (q - p0) = n * p1 * T --> n * (q - p0) / (p1 * n) = T 
+//		 * This is the equation we need to solve to get the right T; we have all the ingredients */
+//		var T = planeNormal * (planePoint - raycastOrigin) / (planeNormal * raycastEnd);
+//		
+//		// Now that we have T, let's solve the ray's equation and we've got our point
+//		pointInPlane = raycastOrigin + (raycastEnd * T);
+//	}
+//	
+//	return pointInPlane;
+}
+
+/*
+ * Ausiliary function that computes the normal of a planar object, using heuristics. The planar object is assumed to be vertical (i.e. perpendicular to the z axis)
+ */
+function ComputeNormalOfPlanarObject(object)
+{
+	// I get 4 points that belong to the object (even if the object is smaller than this, it's assumed to be a plane, so it's considered infinite)
+	var p0 = object.LocalToWorld([0, 0, 0]);
+	var p1 = object.LocalToWorld([0, 1 * SCALE_FACTOR, 0]);
+	var p2 = object.LocalToWorld([0, 0, 0]);
+	var p3 = object.LocalToWorld([1 * SCALE_FACTOR, 0, 0]);
+	
+	// I get 2 vectors from these 4 points, so that the vectors are "attached" to the plane
+	var vec1 = p1 - p0;
+	var vec2 = p3 - p2;
+	
+	// Now I compute the cross product between the vector, which gives as a result a vector that is perpendicular to the 2 vectors, and since the vectors
+	// where "attached" to the plane, the vector is basically the normal to the plane. I normalize it to make it an "official" normal
+	var normal = Norm(vec1 ^ vec2);
+	
+	return normal;
+}
+
+
+/*
+ * Ausiliary function that creates a wall that simulates a glass; the glass has also borders at each sides
+ * 
+ * width: (float) width of the wall
+ * height: (float) height of the wall
+ * borderThickness: (float) thickness of the borders around the glass
+ * lightsRangeMin: (integer) the min number of the range of opengl lights that have to be used in the cel shader to render the glass wall
+ * lightsRangeMax: (integer) the max number of the range of opengl lights that have to be used in the cel shader to render the glass wall
+ */
+function CreateGlassPlane(width, height, borderThickness, borderColor, glassAlpha)
+{
+	var halfWidth = width / 2.0;
+	var halfHeight = height / 2.0;
+	var halfThickness = borderThickness / 2.0;
+	
+	if(glassAlpha == Void)
+		glassAlpha = 0.5;
+	
+	// The glass mesh is smaller than the wall, because it takes into account the borders
+	var glassMesh = CVmNewMesh(VRP_PLANE, 1, [-halfWidth + borderThickness, -halfHeight + borderThickness, 0], [halfWidth - borderThickness, halfHeight - borderThickness, 0], 2, 2);
+	
+	var glassMaterial = CVmMaterial();
+	glassMaterial.diffuse = [0, 0, 0];
+	glassMaterial.ambient = [0, 0, 0];
+	glassMaterial.specular = [0, 0, 0];
+	glassMaterial.transparency = glassAlpha;
+	
+	glassMesh.ForceMaterial(glassMaterial);
+	
+	var glassWallObj = CVmObj(glassMesh);
+	
+	// Meshes for the borders
+	var verticalBorderMesh = CVmNewMesh(VRP_PLANE, 1, [-halfThickness, -halfHeight, 0], [halfThickness, halfHeight, 0], 2, 2);
+	var horizzontalBorderMesh = CVmNewMesh(VRP_PLANE, 1, [-halfWidth + halfThickness, -halfThickness, 0], [halfWidth - halfThickness, halfThickness, 0], 2, 2);
+	
+	var leftBorderObj = CVmObj(verticalBorderMesh);
+	var rightBorderObj = CVmObj(verticalBorderMesh);
+	var topBorderObj = CVmObj(horizzontalBorderMesh);
+	var bottomBorderObj = CVmObj(horizzontalBorderMesh);
+	
+	// Mesh for the silhouette lines used in the borders
+	var silhouetteLineHalfWidth = 0.02 * SCALE_FACTOR;
+	
+	var outerSilhouetteVerticalLine = CVmNewMesh(VRP_PLANE, 1, [-silhouetteLineHalfWidth, -halfHeight, 0], [silhouetteLineHalfWidth, halfHeight, 0], 2, 2);
+	var outerSilhouetteHorizzontalLine = CVmNewMesh(VRP_PLANE, 1, [-silhouetteLineHalfWidth, -halfWidth, 0], [silhouetteLineHalfWidth, halfWidth, 0], 2, 2);
+
+	// Black material for the lines
+	var silhouetteMaterial = CVmMaterial();
+	silhouetteMaterial.diffuse = borderColor;
+	silhouetteMaterial.ambient = [0, 0, 0];
+	silhouetteMaterial.specular = [0, 0, 0];
+	
+	outerSilhouetteVerticalLine.ForceMaterial(silhouetteMaterial);
+	outerSilhouetteHorizzontalLine.ForceMaterial(silhouetteMaterial);
+	
+	var outerSilhouetteLeft = CVmObj(outerSilhouetteVerticalLine);
+	var outerSilhouetteRight = CVmObj(outerSilhouetteVerticalLine);
+	var outerSilhouetteTop = CVmObj(outerSilhouetteHorizzontalLine);
+	var outerSilhouetteBottom = CVmObj(outerSilhouetteHorizzontalLine);
+	
+	outerSilhouetteTop.Rotate(90, 0, 0, 1);
+	outerSilhouetteBottom.Rotate(90, 0, 0, 1);
+	
+	// Adding the borders to the wall
+	glassWallObj.AddChild(leftBorderObj, halfWidth - halfThickness, 0, 0);
+	glassWallObj.AddChild(rightBorderObj, -halfWidth + halfThickness, 0, 0);
+	glassWallObj.AddChild(topBorderObj, 0, halfHeight - halfThickness, 0);
+	glassWallObj.AddChild(bottomBorderObj, 0, -halfHeight + halfThickness, 0);
+	
+	// Adding the silhouette lines to the wall where the borders are, using a very low z offset to avoid Z fighting but at the same time making
+	// it look like they're attached to the wall
+//	glassWallObj.AddChild(outerSilhouetteLeft, halfWidth, 0, -0.003 * SCALE_FACTOR);
+//	glassWallObj.AddChild(outerSilhouetteRight, -halfWidth, 0, -0.003 * SCALE_FACTOR);
+//	glassWallObj.AddChild(outerSilhouetteTop, 0, halfHeight - silhouetteLineHalfWidth, -0.003 * SCALE_FACTOR);
+//	glassWallObj.AddChild(outerSilhouetteBottom, 0, -halfHeight + silhouetteLineHalfWidth, -0.003 * SCALE_FACTOR);
+	
+	return glassWallObj;
+}
