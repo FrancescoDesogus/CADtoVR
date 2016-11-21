@@ -17,6 +17,8 @@ class ToolsMenu
 	
 	var mIntersectionPoint;
 	
+	var mAnimator;
+	
 	
 	// Public functions
 	Draw();
@@ -39,7 +41,7 @@ class ToolsMenu
 	IsVisible();
 	IsCollidingBBox(object);
 	
-	UpdateLogic(debugMode, rayOrigin, rayEnd);
+	UpdateLogic(dt, debugMode, rayOrigin, rayEnd);
 	IsIntersectionFound();
 };
 
@@ -49,12 +51,14 @@ function ToolsMenu::ToolsMenu(viveController)
 	mViveController = viveController;
 	mIntersectionPoint = [0, 0, 0];
 	
+	mAnimator = Animator();
+	
 	mPanels = {};
 	mPanelsPositionOffset = {};
 	mPanelsRotation = {};
 	mPanelsRotationAxis = {};
 	
-	var selectionPanelObj = SelectionPanel();
+	var selectionPanelObj = SelectionPanel(mAnimator);
 	var positionOffset = [0, mViveController.GetHeight() / 2.0, selectionPanelObj.GetHeight() / 3.0];
 	var rotation = -90;
 	var rotationAxis = [1, 0, 0];
@@ -75,7 +79,7 @@ function ToolsMenu::ToolsMenu(viveController)
 //	aadd(mPanelsRotationAxis, rotationAxis);
 }
 
-function ToolsMenu::UpdateLogic(isVRon, rayOrigin, rayEnd)
+function ToolsMenu::UpdateLogic(dt, isVRon, rayOrigin, rayEnd)
 {
 	var contactDistance = CameraGetCurrent().GetZFar();
 	var contactPoint;
@@ -123,6 +127,8 @@ function ToolsMenu::UpdateLogic(isVRon, rayOrigin, rayEnd)
 	}
 	else
 		mIntersectionPoint = Void;
+		
+	mAnimator.UpdateTransitions(dt);
 }
 
 /*

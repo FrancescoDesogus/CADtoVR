@@ -1,16 +1,33 @@
- 
+#include "ToolIcon.s3d"
+
 class SelectionPanel
 {
-//	var mViveController;
-	
-	var mToolPanelSilhouetteTickness;
+	// Sizes of the panel
 	var mToolPanelWidth;
 	var mToolPanelHeight;
+	var mToolPanelSilhouetteTickness;
 	
+	// These variables contain the x coordinates of the range where the icons are drawn in the panel (in the local space of the panel 
+	// itself). They're needed to define the range along the x axis where the icons are put inside the panel
+	var mMinIconRange;
+	var mMaxIconRange;
+	
+	// Obj of the panel
 	var mPanel;
+	
+	// Text object containing the name of the panel
 	var mPanelName;
 	
+	// This array contains the list of icons in the panel. It's organized as a list of lists: each list is a row in the panel
 	var mTools;
+	
+	var mAnimator;
+	
+	// When the user is pointing with the action controller over an icon, this variable holds the reference to that icon
+	var mCurrentHoveredTool;
+	
+	// When the user selects an icon with the action controller, this variable holds the reference to that icon
+	var mCurrentSelectedTool;
 	
 	
 	// Public functions
@@ -18,10 +35,6 @@ class SelectionPanel
 	GetWidth();
 	GetHeight();
 	GetObj();
-	GetIndex();
-	SetActionAvailable(isActionAvailable);
-	GetControllerTipCoordinates();
-	GetDirection();
 	SetPosition(position);
 	Translate(transl);
 	GetPosition();
@@ -43,11 +56,19 @@ class SelectionPanel
 };
 
 
-function SelectionPanel::SelectionPanel()
+function SelectionPanel::SelectionPanel(animator)
 {
+	mAnimator = animator;
+	
+	mCurrentHoveredTool = Void;
+	mCurrentSelectedTool = Void;
+	
 	mToolPanelSilhouetteTickness = 0.02 * SCALE_FACTOR;
 	mToolPanelWidth = 1.0 * SCALE_FACTOR;
 	mToolPanelHeight = 1.0 * SCALE_FACTOR;
+	
+	mMinIconRange = -0.5 * SCALE_FACTOR;
+	mMaxIconRange = 0.5 * SCALE_FACTOR;
 	
 	mPanel = CreateGlassPlane(mToolPanelWidth, mToolPanelHeight, 0.01 * SCALE_FACTOR, [1.0, 1.0, 1.0], 0.5);
 	mPanel.Rotate(90, 1, 0, 0);
@@ -55,43 +76,108 @@ function SelectionPanel::SelectionPanel()
 	mPanelName = Text("Selection Tools", 0.3, [1, 1, 1]);
 	mPanel.AddChild(mPanelName.GetObj(), 0, mToolPanelHeight / 2.0 - mPanelName.GetFontHeight(), 0.01 * SCALE_FACTOR);
 	
+	var selToolObj = ToolIcon("Textures/icons/select.png", "Info tool", 0);	
+	var selToolObj2 = ToolIcon("Textures/icons/select.png", "Info tool", 0);
+	var selToolObj3 = ToolIcon("Textures/icons/select.png", "Info tool", 0);
+	var selToolObj4 = ToolIcon("Textures/icons/select.png", "Info tool", 0);
+	var selToolObj5 = ToolIcon("Textures/icons/select.png", "Info tool", 0);
+	var selToolObj6 = ToolIcon("Textures/icons/select.png", "Info tool", 0);
 	
-	var iconWidth = 0.15 * SCALE_FACTOR;
-	var iconHeight = 0.15 * SCALE_FACTOR;
-	
-	var selectionTool = CVmNewMesh(VRP_PLANE, 1, [-iconWidth / 2.0, -iconHeight / 2.0, 0], [iconWidth / 2.0, iconHeight / 2.0, 0], 2, 2);
-	var selToolObj = CVmObj(selectionTool);
-	
-	var selectionMaterial = CVmMaterial();
-	selectionMaterial.Ambient = [0, 0, 0];
-	selectionMaterial.Shininess = 0.05;
-	selectionMaterial.Specular = [0,0,0];
-	selectionMaterial.SetTexture(CVmTexture("Textures/icons/select.png"));
-	
-	selectionTool.SetMaterial(selectionMaterial);
-	
-//	mTools = {};
-	mTools = selToolObj;
-//	aadd(mTools, selToolObj);
+	mTools = {};
+
+	aadd(mTools, {selToolObj, selToolObj2, selToolObj3});
+	aadd(mTools, {selToolObj4, selToolObj5});
+	aadd(mTools, {selToolObj6});
 }
 
+/*
+ * This method currently only updates the position of the icons in the panel
+ */
 function SelectionPanel::UpdateLogic(isVRon)
 {
-	mTools.SetPosition(mPanel.LocalToWorld([-0.2 * SCALE_FACTOR, 0.1 * SCALE_FACTOR, 0.01 * SCALE_FACTOR]));
-	mTools.SetRotationMatrix(mPanel.GetRotationMatrix());
+	var toolsRows = len(mTools);
+	
+	var initialYoffset = 0.1 * SCALE_FACTOR;
+	
+	// I need to position every icon, so I iterate over all of the rows of icons
+	for(var i = 0; i < toolsRows; i++)
+	{
+		var toolRow = mTools[i];
+		var toolsInRow = len(toolRow);
+		
+		// For each row, I iterate over every icon in it
+		for(var j = 0; j < toolsInRow; j++)
+		{
+			var toolIcon = toolRow[j];
+			
+			// To find the x coordinate (in the local space of the panel) I use this formula that takes into account the whole range
+			// in which icons are allowed to be (found by writing examples with pen and paper)
+			var x = (Abs(mMinIconRange) + Abs(mMaxIconRange)) / (toolsInRow + 1) * (j + 1) + mMinIconRange;
+			
+			// The y coordinate takes into account the current number of the row we're considering; I add an initial offset to this
+			var y = initialYoffset - (toolIcon.GetHeight() + 0.05 * SCALE_FACTOR) * i;
+
+			// Finally, I can set the position and orientation of the icon
+			toolIcon.SetPosition(mPanel.LocalToWorld([x, y, 0.01 * SCALE_FACTOR]));
+			toolIcon.SetRotationMatrix(mPanel.GetRotationMatrix());
+		}
+	}
 }
 
+/*
+ * This method is onyl called by the ToolsMenu class if there is an intersection of a ray inside the panel, i.e. the action controller
+ * is directly pointing this panel. This method has the task of finding where the ray is hitting
+ */
 function SelectionPanel::FindIntersection(rayOrigin, rayEnd)
 {
-	if(mTools.IsColliding(rayOrigin, rayEnd))
+	var found = false;
+
+	// I need to check if the ray is pointing any icon
+	for(var i = 0; i < len(mTools) && !found; i++)
 	{
-		outputln("YE");
+		var toolRow = mTools[i];
+		
+		for(var j = 0; j < len(toolRow) && !found; j++)
+		{
+			var toolIcon = toolRow[j];
+			
+			// If this icon is being hit, we're done
+			if(toolIcon.IsColliding(rayOrigin, rayEnd))
+			{
+				found = true;
+				
+				// If this icon wasn't being hovered, now it is. So I save this information and create an animation
+				if(toolIcon != mCurrentHoveredTool)
+				{
+					mCurrentHoveredTool = toolIcon;
+					mAnimator.CreateScalingTransition(toolIcon.GetObj(), toolIcon.GetScale(), [1.35, 1.35, 1], 0.1, false);	
+				}
+			}
+		}
+	}
+	
+	// If no icon was hit and there was an icon hovered, now it's not anymore, so I save this fact and create an animation
+	if(!found && mCurrentHoveredTool != Void)
+	{
+		mAnimator.CreateScalingTransition(mCurrentHoveredTool.GetObj(), mCurrentHoveredTool.GetScale(), [1, 1, 1], 0.1, false);	
+		mCurrentHoveredTool = Void;
 	}
 }
 
 function SelectionPanel::Draw()
 {
-	mTools.Draw();
+	// Drawing each icon
+	for(var i = 0; i < len(mTools); i++)
+	{
+		var toolRow = mTools[i];
+		
+		for(var j = 0; j < len(toolRow); j++)
+		{
+			toolRow[j].Draw();
+		}
+	}
+	
+	// Drawing the panel itself; I draw it last so that it can render the opacity right
 	mPanel.Draw();
 }
 

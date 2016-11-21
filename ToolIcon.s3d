@@ -1,0 +1,173 @@
+ 
+class ToolIcon
+{
+	// Sizes of the icon
+	var mIconWidth;
+	var mIconHeight;
+	
+	// String containing the name of the tool this icon represents
+	var mToolName;
+	
+	// ID of the tool
+	var mToolID;
+	
+	// Obj of the icon
+	var mIcon;
+	
+	
+	// Public functions
+	Draw();
+	GetWidth();
+	GetHeight();
+	GetObj();
+	GetName();
+	GetID();
+	SetPosition(position);
+	Translate(transl);
+	GetPosition();
+	SetRotationMatrix(matrix);
+	GetRotationMatrix();
+	Rotate(angle, x, y, z);
+	SetRotation(angle, x, y, z);
+	LocalToWorld(point);
+	Hide();
+	Unhide();
+	SetScale(x, y, z);
+	GetScale();
+	IsVisible();
+	IsCollidingBBox(object);
+	
+	IsColliding(rayOrigin, rayEnd, contactPoint);
+};
+
+
+function ToolIcon::ToolIcon(textureString, name, id)
+{
+	mIconWidth = 0.15 * SCALE_FACTOR;
+	mIconHeight = 0.15 * SCALE_FACTOR;
+	
+	var iconHalfWidth = mIconWidth / 2.0;
+	var iconHalfHeight = mIconWidth / 2.0;
+	
+	mToolName = name;
+	mToolID = id;
+	
+	var iconMesh = CVmNewMesh(VRP_PLANE, 1, [-iconHalfWidth, -iconHalfHeight, 0], [iconHalfWidth, iconHalfHeight, 0], 2, 2);
+	
+	var iconMaterial = CVmMaterial();
+	iconMaterial.Ambient = [0, 0, 0];
+	iconMaterial.Shininess = 0.05;
+	iconMaterial.Specular = [0,0,0];
+	iconMaterial.SetTexture(CVmTexture(textureString));
+	
+	iconMesh.SetMaterial(iconMaterial);
+	
+	mIcon = CVmObj(iconMesh);
+}
+
+function ToolIcon::Draw()
+{
+	mIcon.Draw();
+}
+
+function ToolIcon::GetWidth()
+{
+	return mIconWidth;
+}
+
+
+function ToolIcon::GetHeight()
+{
+	return mIconHeight;
+}
+
+function ToolIcon::IsColliding(rayOrigin, rayEnd, contactPoint)
+{
+	return mIcon.IsColliding(rayOrigin, rayEnd, &contactPoint);
+}
+
+function ToolIcon::GetObj()
+{
+	return mIcon;
+}
+
+function ToolIcon::GetName()
+{
+	return mToolName;
+}
+
+function ToolIcon::GetID()
+{
+	return mToolID;	
+}
+
+function ToolIcon::SetPosition(position)
+{
+	mIcon.SetPosition(position);
+}
+
+function ToolIcon::GetPosition()
+{
+	return mIcon.GetPosition();
+}
+
+function ToolIcon::SetRotationMatrix(matrix)
+{
+	mIcon.SetRotationMatrix(matrix);
+}
+
+function ToolIcon::GetRotationMatrix()
+{
+	return mIcon.GetRotationMatrix();
+}
+
+
+function ToolIcon::Rotate(angle, x, y, z)
+{
+	mIcon.Rotate(angle, x, y, z);
+}
+
+function ToolIcon::SetRotation(angle, x, y, z)
+{
+	mIcon.SetRotation(angle, x, y, z);
+}
+
+function ToolIcon::LocalToWorld(point)
+{
+	return mIcon.LocalToWorld(point);
+}
+
+function ToolIcon::Hide()
+{
+	mIcon.Hide();
+}
+
+function ToolIcon::Unhide()
+{
+	mIcon.Unhide();
+}
+
+function ToolIcon::SetScale(x, y, z)
+{
+	mIcon.SetScale(x, y, z);
+}
+
+function ToolIcon::GetScale()
+{
+	return mIcon.GetScale();
+}
+
+//function ToolIcon::IsVisible()
+//{
+//	return mViveController.IsVisible();
+//}
+
+function ToolIcon::Translate(transl)
+{
+	mIcon.Translate(transl);
+}
+
+function ToolIcon::IsCollidingBBox(object)
+{
+	return mIcon.IsCollidingBBox(object);
+}

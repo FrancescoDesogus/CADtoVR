@@ -35,7 +35,7 @@ class MenuController
 	IsVisible();
 	IsCollidingBBox(object);
 	
-	UpdateLogic(debugMode, actionController);
+	UpdateLogic(dt, debugMode, actionController);
 };
 
 
@@ -52,7 +52,7 @@ function MenuController::MenuController(viveController)
 //	mViveController.AddChild(mToolPanel, 0.0, mViveController.GetHeight(), 0.0);
 }
 
-function MenuController::UpdateLogic(isVRon, actionController)
+function MenuController::UpdateLogic(dt, isVRon, actionController)
 {
 	if(!isVRon)
 	{
@@ -116,7 +116,7 @@ function MenuController::UpdateLogic(isVRon, actionController)
 	
 	// Updating the logic of the menu. It will update its position with respect to the controller and will check if 
 	// the action controller intersects the menu
-	mToolPanel.UpdateLogic(isVRon, rayOrigin, rayEnd);
+	mToolPanel.UpdateLogic(dt, isVRon, rayOrigin, rayEnd);
 	
 	// If the action controller intersects the tool panel, this method retrieves the contact point (which is void if no intersection is found)
 	var contactPoint = mToolPanel.IsIntersectionFound();

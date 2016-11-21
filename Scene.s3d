@@ -188,7 +188,7 @@ function Scene::UpdateLogic(dt)
 	}
 	
 	mActionController.UpdateLogic(mIsVRon);
-	mMenuController.UpdateLogic(mIsVRon, mActionController);
+	mMenuController.UpdateLogic(dt, mIsVRon, mActionController);
 		
 	// I update the methods of the managers
 	mAnimator.UpdateTransitions(dt);
