@@ -21,6 +21,8 @@ function MeasuringPanel::MeasuringPanel(animator)
 	aadd(mTools, {selToolObj, selToolObj2, selToolObj3});
 	aadd(mTools, {selToolObj6});
 	aadd(mTools, {selToolObj4, selToolObj5});
+	
+	Panel::this.GenerateIconsPositions();
 }
 
 /*

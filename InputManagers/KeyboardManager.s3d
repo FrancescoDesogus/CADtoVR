@@ -43,7 +43,8 @@ class KeyboardManager
 	
 	var mIsPressingMenuButton;
 	
-	var mPrimaryButtonPressed;
+	var mPrimaryButtonSinglePressed;
+	var mGripSinglePressed;
 		
 	// Private functions
 	UpdateCameraPosition();
@@ -54,8 +55,9 @@ class KeyboardManager
 	SetActiveCamera(camera);
 	IsPressingPrimaryButton();
 	IsPressingSecondaryButton();
-	PrimaryButtonPressed();
+	PrimaryButtonSinglePressed();
 	IsGripPressed();
+	GripSinglePressed();
 	HasPressedMenuButton();
 	GetController(controllerIndex);
 };
@@ -84,7 +86,8 @@ function KeyboardManager::KeyboardManager()
 	// I don't know why, but I have to remove the cursor both here and in the main file of the project, otherwise it doesn't disappear
 	ShowCursor(false);
 	
-	mPrimaryButtonPressed = false;
+	mPrimaryButtonSinglePressed = false;
+	mGripSinglePressed = false;
 }
 
 
@@ -281,18 +284,34 @@ function KeyboardManager::IsPressingSecondaryButton()
 	return Mouse.ButtonR;
 }
 
-function KeyboardManager::PrimaryButtonPressed()
+function KeyboardManager::PrimaryButtonSinglePressed()
 {
 	if(Mouse.ButtonL)
 	{
-		if(!mPrimaryButtonPressed)
+		if(!mPrimaryButtonSinglePressed)
 		{
-			mPrimaryButtonPressed = true;
+			mPrimaryButtonSinglePressed = true;
 			return true;
 		}
 	}
 	else
-		mPrimaryButtonPressed = false;
+		mPrimaryButtonSinglePressed = false;
+		
+	return false;
+}
+
+function KeyboardManager::GripSinglePressed()
+{
+	if(KeyPressed(VK_CONTROL))
+	{
+		if(!mGripSinglePressed)
+		{
+			mGripSinglePressed = true;
+			return true;
+		}
+	}
+	else
+		mGripSinglePressed = false;
 		
 	return false;
 }

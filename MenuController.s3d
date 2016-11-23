@@ -130,10 +130,15 @@ function MenuController::UpdateLogic(dt, isVRon, actionController)
 	
 	if(intersectionWasFound)
 	{
-		if(mInputManager.PrimaryButtonPressed(actionController.GetIndex()))
+		if(mInputManager.PrimaryButtonSinglePressed(actionController.GetIndex()))
 		{
 			mToolPanel.SelectCurrentHoveredTool();
 		}
+	}
+	
+	if(mInputManager.GripSinglePressed(mViveController.GetIndex()))
+	{
+		mToolPanel.DeSelectCurrentTool();
 	}
 }
 

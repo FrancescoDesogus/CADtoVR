@@ -3,6 +3,9 @@ class SelectionPanel : Panel
 {
 	// Public inherited functions
 	UpdateLogic(isVRon);
+	
+	// Private functions
+//	GenerateIconsPositions();
 };
 
 
@@ -23,6 +26,8 @@ function SelectionPanel::SelectionPanel(animator)
 	aadd(mTools, {selToolObj, selToolObj2, selToolObj3});
 	aadd(mTools, {selToolObj4, selToolObj5});
 	aadd(mTools, {selToolObj6});
+	
+	Panel::this.GenerateIconsPositions();
 }
 
 /*

@@ -12,7 +12,8 @@ class ViveManager
 	var mControllers;
 	
 	var mIsPressingMenuButton;
-	var mPrimaryButtonPressed;
+	var mPrimaryButtonSinglePressed;
+	var mGripSinglePressed;
 	
 	// Boolean; is true when de debug mode is active
 	var mDebugMode;
@@ -23,8 +24,9 @@ class ViveManager
 	SetActiveCamera(camera);
 	IsPressingPrimaryButton(controllerIndex);
 	IsPressingSecondaryButton(controllerIndex);
-	PrimaryButtonPressed(controllerIndex);
+	PrimaryButtonSinglePressed(controllerIndex);
 	IsGripPressed(controllerIndex);
+	GripSinglePressed(controllerIndex);
 	HasPressedMenuButton(controllerIndex);
 	VibrateController(controllerIndex, microseconds);
 	GetController(controllerIndex);
@@ -53,7 +55,8 @@ function ViveManager::ViveManager(HMD)
 	aadd(mControllers, ViveController(2));
 	
 	mIsPressingMenuButton = false;
-	mPrimaryButtonPressed = false;
+	mPrimaryButtonSinglePressed = false;
+	mGripSinglePressed = false;
 }
 
 
@@ -113,18 +116,34 @@ function ViveManager::IsPressingSecondaryButton(controllerIndex)
 	return mHMD.IsTouchpadPressed(controllerIndex == 1 ? mController1Index : mController2Index) == 1;
 }
 
-function ViveManager::PrimaryButtonPressed(controllerIndex)
+function ViveManager::PrimaryButtonSinglePressed(controllerIndex)
 {
 	if(mHMD.IsTriggerPressed(controllerIndex == 1 ? mController1Index : mController2Index) == 1)
 	{
-		if(!mPrimaryButtonPressed)
+		if(!mPrimaryButtonSinglePressed)
 		{
-			mPrimaryButtonPressed = true;
+			mPrimaryButtonSinglePressed = true;
 			return true;
 		}
 	}
 	else
-		mPrimaryButtonPressed = false;
+		mPrimaryButtonSinglePressed = false;
+		
+	return false;
+}
+
+function ViveManager::GripSinglePressed(controllerIndex)
+{
+	if(mHMD.IsGripPressed(controllerIndex == 1 ? mController1Index : mController2Index) == 1)
+	{
+		if(!mGripSinglePressed)
+		{
+			mGripSinglePressed = true;
+			return true;
+		}
+	}
+	else
+		mGripSinglePressed = false;
 		
 	return false;
 }

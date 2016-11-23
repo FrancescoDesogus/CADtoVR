@@ -259,13 +259,13 @@ function Text::Draw()
 
 function Text::Hide()
 {
-	mIsVisible = true;
+	mIsVisible = false;
 	mTextContainerObj.Hide();
 }
 
 function Text::Unhide()
 {
-	mIsVisible = false;
+	mIsVisible = true;
 	mTextContainerObj.Unhide();
 }
 

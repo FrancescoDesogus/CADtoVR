@@ -33,6 +33,10 @@ class Panel
 	// When the user selects an icon with the action controller, this variable holds the reference to that icon
 	var mCurrentSelectedTool;
 	
+	var mIsToolSelected;
+	
+	var mSelectedTool;
+	
 	
 	// This method works as the constructor for the class: the classes that will inherit from this class will need to call
 	// this in their constructor as the first call
@@ -60,6 +64,8 @@ class Panel
 	
 	FindIntersection(rayOrigin, rayEnd);
 	SelectCurrentHoveredTool();
+	DeSelectCurrentTool();
+	GenerateIconsPositions();
 	
 	// Public functions that need to be overwritten; the classes that will inherit from this class will still need to call
 	// this method in their override function as the first call, to update general things of the panel
@@ -94,6 +100,9 @@ function Panel::Init(panelName, animator)
 
 	// Initializing the array that will hold the icons for the tools. It will be filled up by the class that will inherit this one
 	mTools = {};
+	
+	mIsToolSelected = false;
+	mSelectedTool = Void;
 }
 
 /*
@@ -103,6 +112,177 @@ function Panel::UpdateLogic(isVRon)
 {
 	var toolsRows = len(mTools);
 	
+	var initialYoffset = 0.1 * SCALE_FACTOR;
+	
+	if(!mIsToolSelected)
+	{
+		// I need to position every icon, so I iterate over all of the rows of icons
+		for(var i = 0; i < toolsRows; i++)
+		{
+			var toolRow = mTools[i];
+			var toolsInRow = len(toolRow);
+			
+			// For each row, I iterate over every icon in it
+			for(var j = 0; j < toolsInRow; j++)
+			{
+				var toolIcon = toolRow[j];
+	
+				// Finally, I can set the position and orientation of the icon
+				toolIcon.SetCollisionPosition(mPanel.LocalToWorld(toolIcon.GetDefaultPosition()));
+				toolIcon.SetCollisionRotationMatrix(mPanel.GetRotationMatrix());
+			}
+		}
+	
+	}
+}
+
+/*
+ * This method is onyl called by the ToolsMenu class if there is an intersection of a ray inside the panel, i.e. the action controller
+ * is directly pointing this panel. This method has the task of finding where the ray is hitting
+ */
+function Panel::FindIntersection(rayOrigin, rayEnd)
+{
+	var found = false;
+	
+	if(!mIsToolSelected)
+	{
+		// I need to check if the ray is pointing any icon
+		for(var i = 0; i < len(mTools) && !found; i++)
+		{
+			var toolRow = mTools[i];
+			
+			for(var j = 0; j < len(toolRow) && !found; j++)
+			{
+				var toolIcon = toolRow[j];
+				
+				// If this icon is being hit, we're done
+				if(toolIcon.IsColliding(rayOrigin, rayEnd))
+				{
+					found = true;
+					
+					// If this icon wasn't being hovered, now it is. So I save this information and create an animation
+					if(toolIcon != mCurrentHoveredTool)
+					{
+						mCurrentHoveredTool = toolIcon;
+						mAnimator.CreateScalingTransition(toolIcon.GetObj(), toolIcon.GetScale(), [1.35, 1.35, 1], 0.1, false);	
+					}
+				}
+			}
+		}
+		
+		// If no icon was hit and there was an icon hovered, now it's not anymore, so I save this fact and create an animation
+		if(!found && mCurrentHoveredTool != Void)
+		{
+			mAnimator.CreateScalingTransition(mCurrentHoveredTool.GetObj(), mCurrentHoveredTool.GetScale(), [1, 1, 1], 0.1, false);	
+			mCurrentHoveredTool = Void;
+		}
+	}
+	else
+	{
+		if(mPanelName.IsVisible() && mPanelName.GetScale().x <= 0)
+		{
+			mPanelName.Hide();
+			
+			for(var i = 0; i < len(mTools) && !found; i++)
+			{
+				var toolRow = mTools[i];
+				
+				for(var j = 0; j < len(toolRow) && !found; j++)
+					if(toolRow[j] != mCurrentHoveredTool)
+						toolRow[j].Hide();
+			}
+		}
+	}
+}
+
+function Panel::SelectCurrentHoveredTool()
+{
+	if(mCurrentHoveredTool != Void)
+	{
+//		mPanelName.SetPivotPoint(mPanelName.LocalToWorld([-mPanelName.GetWidthOfLine(0) / 2.0, 0, 0]));
+		mAnimator.CreateScalingTransition(mPanelName.GetObj(), mPanelName.GetScale(), [0, 1, 0], 0.2, false, 2);	
+		
+		for(var i = 0; i < len(mTools); i++)
+		{
+			var toolRow = mTools[i];
+			
+			for(var j = 0; j < len(toolRow); j++)
+			{
+				var toolIcon = toolRow[j];
+				
+				if(toolIcon != mCurrentHoveredTool)
+					mAnimator.CreateScalingTransition(toolIcon.GetObj(), toolIcon.GetScale(), [0, 0, 0], 0.2, false, 2);	
+			}
+		}
+		
+		mAnimator.CreateScalingTransition(mCurrentHoveredTool.GetObj(), mCurrentHoveredTool.GetScale(), [1, 1, 1], 0.2, false, 2);	
+		
+		
+		var endPos = [-GetWidth() / 2.0 + mCurrentHoveredTool.GetWidth(), GetHeight() / 2.0 - mCurrentHoveredTool.GetHeight(), 0.01 * SCALE_FACTOR];	
+		mAnimator.CreateTransition(mCurrentHoveredTool, mCurrentHoveredTool.GetPosition(), endPos, 0.3, false, 2);
+		
+		mIsToolSelected = true;
+		
+		mSelectedTool = mCurrentHoveredTool;
+	}
+	
+	return mIsToolSelected;
+}
+
+function Panel::DeselectCurrentTool()
+{
+	if(mIsToolSelected)
+	{
+		mIsToolSelected = false;
+		
+		mAnimator.CreateScalingTransition(mPanelName.GetObj(), mPanelName.GetScale(), [1, 1, 1], 0.2, false, 2);
+		mPanelName.Unhide();
+		
+		for(var i = 0; i < len(mTools); i++)
+		{
+			var toolRow = mTools[i];
+			
+			for(var j = 0; j < len(toolRow); j++)
+			{
+				var toolIcon = toolRow[j];
+				
+				if(toolIcon != mSelectedTool)
+				{
+					mAnimator.CreateScalingTransition(toolIcon.GetObj(), toolIcon.GetScale(), [1, 1, 1], 0.2, false, 2);
+					toolIcon.Unhide();
+				}	
+			}
+		}
+		
+		mAnimator.CreateTransition(mSelectedTool, mSelectedTool.GetPosition(), mSelectedTool.GetDefaultPosition(), 0.3, false, 2);
+		
+		mSelectedTool = Void;
+		mCurrentHoveredTool = mSelectedTool;
+	}
+	
+	return mIsToolSelected;
+}
+
+function Panel::Draw()
+{
+	// Drawing each icon
+	for(var i = 0; i < len(mTools); i++)
+	{
+		var toolRow = mTools[i];
+		
+		for(var j = 0; j < len(toolRow); j++)
+		{
+			toolRow[j].Draw();
+		}
+	}
+	
+	// Drawing the panel itself; I draw it last so that it can render the opacity right
+	mPanel.Draw();
+}
+
+function Panel::GenerateIconsPositions()
+{
+	var toolsRows = len(mTools);
 	var initialYoffset = 0.1 * SCALE_FACTOR;
 	
 	// I need to position every icon, so I iterate over all of the rows of icons
@@ -124,92 +304,11 @@ function Panel::UpdateLogic(isVRon)
 			var y = initialYoffset - (toolIcon.GetHeight() + 0.05 * SCALE_FACTOR) * i;
 
 			// Finally, I can set the position and orientation of the icon
-			toolIcon.SetPosition(mPanel.LocalToWorld([x, y, 0.01 * SCALE_FACTOR]));
-			toolIcon.SetRotationMatrix(mPanel.GetRotationMatrix());
-		}
-	}
-}
-
-/*
- * This method is onyl called by the ToolsMenu class if there is an intersection of a ray inside the panel, i.e. the action controller
- * is directly pointing this panel. This method has the task of finding where the ray is hitting
- */
-function Panel::FindIntersection(rayOrigin, rayEnd)
-{
-	var found = false;
-
-	// I need to check if the ray is pointing any icon
-	for(var i = 0; i < len(mTools) && !found; i++)
-	{
-		var toolRow = mTools[i];
-		
-		for(var j = 0; j < len(toolRow) && !found; j++)
-		{
-			var toolIcon = toolRow[j];
+			toolIcon.SetDefaultPosition([x, y, 0.01 * SCALE_FACTOR]);
 			
-			// If this icon is being hit, we're done
-			if(toolIcon.IsColliding(rayOrigin, rayEnd))
-			{
-				found = true;
-				
-				// If this icon wasn't being hovered, now it is. So I save this information and create an animation
-				if(toolIcon != mCurrentHoveredTool)
-				{
-					mCurrentHoveredTool = toolIcon;
-					mAnimator.CreateScalingTransition(toolIcon.GetObj(), toolIcon.GetScale(), [1.35, 1.35, 1], 0.1, false);	
-				}
-			}
+			mPanel.AddChild(toolIcon.GetObj(), x, y, 0.01 * SCALE_FACTOR);
 		}
 	}
-	
-	// If no icon was hit and there was an icon hovered, now it's not anymore, so I save this fact and create an animation
-	if(!found && mCurrentHoveredTool != Void)
-	{
-		mAnimator.CreateScalingTransition(mCurrentHoveredTool.GetObj(), mCurrentHoveredTool.GetScale(), [1, 1, 1], 0.1, false);	
-		mCurrentHoveredTool = Void;
-	}
-}
-
-function Panel::SelectCurrentHoveredTool()
-{
-	if(mCurrentHoveredTool != Void)
-	{
-//		mPanelName.SetPivotPoint(mPanelName.LocalToWorld([-mPanelName.GetWidthOfLine(0) / 2.0, 0, 0]));
-		mAnimator.CreateScalingTransition(mPanelName.GetObj(), mPanelName.GetScale(), [0, 1, 0], 0.1, false, 2);	
-		
-		for(var i = 0; i < len(mTools); i++)
-		{
-			var toolRow = mTools[i];
-			
-			for(var j = 0; j < len(toolRow); j++)
-			{
-				var toolIcon = toolRow[j];
-				
-				if(toolIcon != mCurrentHoveredTool)
-					mAnimator.CreateScalingTransition(toolIcon.GetObj(), toolIcon.GetScale(), [0, 0, 0], 0.1, false, 2);	
-			}
-		}
-		
-		var endPos = mPanel.LocalToWorld([-GetWidth() + 0.5 * SCALE_FACTOR, GetHeight() - 0.5 * SCALE_FACTOR, 0.01 * SCALE_FACTOR]);	
-		mAnimator.CreateTransition(mCurrentHoveredTool, mCurrentHoveredTool.GetPosition(), endPos, 5, false, 2);
-	}
-}
-
-function Panel::Draw()
-{
-	// Drawing each icon
-	for(var i = 0; i < len(mTools); i++)
-	{
-		var toolRow = mTools[i];
-		
-		for(var j = 0; j < len(toolRow); j++)
-		{
-			toolRow[j].Draw();
-		}
-	}
-	
-	// Drawing the panel itself; I draw it last so that it can render the opacity right
-	mPanel.Draw();
 }
 
 function Panel::GetWidth()

@@ -14,6 +14,10 @@ class ToolIcon
 	// Obj of the icon
 	var mIcon;
 	
+	var mIconCollisionObj;
+	
+	var mDefaultPosition;
+	
 	
 	// Public functions
 	Draw();
@@ -23,9 +27,11 @@ class ToolIcon
 	GetName();
 	GetID();
 	SetPosition(position);
+	SetCollisionPosition(position);
 	Translate(transl);
 	GetPosition();
 	SetRotationMatrix(matrix);
+	SetCollisionRotationMatrix(matrix);
 	GetRotationMatrix();
 	Rotate(angle, x, y, z);
 	SetRotation(angle, x, y, z);
@@ -38,6 +44,8 @@ class ToolIcon
 	IsCollidingBBox(object);
 	
 	IsColliding(rayOrigin, rayEnd, contactPoint);
+	SetDefaultPosition(position);
+	GetDefaultPosition();
 };
 
 
@@ -52,7 +60,10 @@ function ToolIcon::ToolIcon(textureString, name, id)
 	mToolName = name;
 	mToolID = id;
 	
+	mDefaultPosition = [0, 0, 0];
+	
 	var iconMesh = CVmNewMesh(VRP_PLANE, 1, [-iconHalfWidth, -iconHalfHeight, 0], [iconHalfWidth, iconHalfHeight, 0], 2, 2);
+	var iconCollisionMesh = CVmNewMesh(VRP_PLANE, 1, [-iconHalfWidth, -iconHalfHeight, 0], [iconHalfWidth, iconHalfHeight, 0], 2, 2);
 	
 	var iconMaterial = CVmMaterial();
 	iconMaterial.Ambient = [0, 0, 0];
@@ -63,6 +74,17 @@ function ToolIcon::ToolIcon(textureString, name, id)
 	iconMesh.SetMaterial(iconMaterial);
 	
 	mIcon = CVmObj(iconMesh);
+	mIconCollisionObj = CVmObj(iconCollisionMesh);
+}
+
+function ToolIcon::SetCollisionPosition(position)
+{
+	mIconCollisionObj.SetPosition(position);
+}
+
+function ToolIcon::SetCollisionRotationMatrix(matrix)
+{
+	mIconCollisionObj.SetRotationMatrix(matrix);
 }
 
 function ToolIcon::Draw()
@@ -83,7 +105,8 @@ function ToolIcon::GetHeight()
 
 function ToolIcon::IsColliding(rayOrigin, rayEnd, contactPoint)
 {
-	return mIcon.IsColliding(rayOrigin, rayEnd, &contactPoint);
+	return mIconCollisionObj.IsColliding(rayOrigin, rayEnd, &contactPoint);
+//	return mIcon.IsColliding(rayOrigin, rayEnd, &contactPoint);
 }
 
 function ToolIcon::GetObj()
@@ -170,4 +193,14 @@ function ToolIcon::Translate(transl)
 function ToolIcon::IsCollidingBBox(object)
 {
 	return mIcon.IsCollidingBBox(object);
+}
+
+function ToolIcon::SetDefaultPosition(position)
+{
+	mDefaultPosition = position;
+}
+
+function ToolIcon::GetDefaultPosition()
+{
+	return mDefaultPosition;
 }

@@ -24,6 +24,8 @@ class ToolsMenu
 	var mAnimator;
 	
 	var mCurrentActivePanelIndex;
+	var mPreviousActivePanelIndex;
+	var mIsToolSelected;
 	
 	
 	// Public functions
@@ -50,6 +52,7 @@ class ToolsMenu
 	UpdateLogic(dt, debugMode, rayOrigin, rayEnd);
 	IsIntersectionFound();
 	SelectCurrentHoveredTool();
+	DeSelectCurrentTool();
 };
 
 
@@ -61,6 +64,8 @@ function ToolsMenu::ToolsMenu(viveController)
 	mAnimator = Animator();
 	
 	mCurrentActivePanelIndex = -1;
+	mPreviousActivePanelIndex = -1;
+	mIsToolSelected = false;
 	
 	mPanels = {};
 	mPanelsPositionOffset = {};
@@ -155,7 +160,20 @@ function ToolsMenu::IsIntersectionFound()
 
 function ToolsMenu::SelectCurrentHoveredTool()
 {
-	mPanels[mCurrentActivePanelIndex].SelectCurrentHoveredTool();
+	if(mPreviousActivePanelIndex != -1)
+		mPanels[mPreviousActivePanelIndex].DeSelectCurrentTool();
+
+	mPreviousActivePanelIndex = mCurrentActivePanelIndex;
+	
+	mIsToolSelected = mPanels[mCurrentActivePanelIndex].SelectCurrentHoveredTool();
+}
+
+function ToolsMenu::DeSelectCurrentTool()
+{
+	if(mIsToolSelected)
+		mIsToolSelected = mPanels[mCurrentActivePanelIndex].DeSelectCurrentTool();
+		
+	mPreviousActivePanelIndex = -1;
 }
 
 function ToolsMenu::Draw()
