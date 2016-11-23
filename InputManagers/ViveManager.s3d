@@ -9,11 +9,10 @@ class ViveManager
 	var mController1Index;
 	var mController2Index;
 	
-//	var mController1;
-//	var mController2;
 	var mControllers;
 	
 	var mIsPressingMenuButton;
+	var mPrimaryButtonPressed;
 	
 	// Boolean; is true when de debug mode is active
 	var mDebugMode;
@@ -24,6 +23,7 @@ class ViveManager
 	SetActiveCamera(camera);
 	IsPressingPrimaryButton(controllerIndex);
 	IsPressingSecondaryButton(controllerIndex);
+	PrimaryButtonPressed(controllerIndex);
 	IsGripPressed(controllerIndex);
 	HasPressedMenuButton(controllerIndex);
 	VibrateController(controllerIndex, microseconds);
@@ -53,6 +53,7 @@ function ViveManager::ViveManager(HMD)
 	aadd(mControllers, ViveController(2));
 	
 	mIsPressingMenuButton = false;
+	mPrimaryButtonPressed = false;
 }
 
 
@@ -110,6 +111,22 @@ function ViveManager::IsPressingPrimaryButton(controllerIndex)
 function ViveManager::IsPressingSecondaryButton(controllerIndex)
 {
 	return mHMD.IsTouchpadPressed(controllerIndex == 1 ? mController1Index : mController2Index) == 1;
+}
+
+function ViveManager::PrimaryButtonPressed(controllerIndex)
+{
+	if(mHMD.IsTriggerPressed(controllerIndex == 1 ? mController1Index : mController2Index) == 1)
+	{
+		if(!mPrimaryButtonPressed)
+		{
+			mPrimaryButtonPressed = true;
+			return true;
+		}
+	}
+	else
+		mPrimaryButtonPressed = false;
+		
+	return false;
 }
 
 function ViveManager::IsGripPressed(controllerIndex)

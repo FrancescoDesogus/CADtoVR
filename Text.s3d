@@ -53,6 +53,8 @@ class Text
 	Hide();
 	Unhide();
 	IsVisible();
+	LocalToWorld(point);
+	SetPivotPoint(point);
 	RemoveCharFromText(character);
 	GetLine(lineNumber);
 };
@@ -270,6 +272,16 @@ function Text::Unhide()
 function Text::IsVisible()
 {
 	return mIsVisible;
+}
+
+function Text::LocalToWorld(point)
+{
+	return mTextContainerObj.LocalToWorld(point);
+}
+
+function Text::SetPivotPoint(point)
+{
+	return mTextContainerObj.SetPivotPoint(point);
 }
 
 /*

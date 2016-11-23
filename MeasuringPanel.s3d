@@ -10,12 +10,12 @@ function MeasuringPanel::MeasuringPanel(animator)
 {
 	Panel::this.Init("Measuring Tools", animator); 
 	
-	var selToolObj = ToolIcon("Textures/icons/select.png", "Info tool", 0);	
-	var selToolObj2 = ToolIcon("Textures/icons/select.png", "Info tool", 0);
-	var selToolObj3 = ToolIcon("Textures/icons/select.png", "Info tool", 0);
-	var selToolObj4 = ToolIcon("Textures/icons/select.png", "Info tool", 0);
-	var selToolObj5 = ToolIcon("Textures/icons/select.png", "Info tool", 0);
-	var selToolObj6 = ToolIcon("Textures/icons/select.png", "Info tool", 0);
+	var selToolObj = ToolIcon("Textures/icons/distance.png", "Info tool", 0);	
+	var selToolObj2 = ToolIcon("Textures/icons/distance.png", "Info tool", 0);
+	var selToolObj3 = ToolIcon("Textures/icons/distance.png", "Info tool", 0);
+	var selToolObj4 = ToolIcon("Textures/icons/distance.png", "Info tool", 0);
+	var selToolObj5 = ToolIcon("Textures/icons/distance.png", "Info tool", 0);
+	var selToolObj6 = ToolIcon("Textures/icons/distance.png", "Info tool", 0);
 	
 
 	aadd(mTools, {selToolObj, selToolObj2, selToolObj3});

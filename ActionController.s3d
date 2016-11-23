@@ -2,8 +2,9 @@
 class ActionController
 {
 	var mViveController;
-	var mActionController;
 	var mControllerIndex;
+	
+	var mInputManager;
 	
 	var mPanelDistanceToController;
 	var mToolPanelWidth;
@@ -41,10 +42,11 @@ class ActionController
 };
 
 
-function ActionController::ActionController(viveController)
+function ActionController::ActionController(viveController, inputManager)
 {
 	mViveController = viveController;
 	mControllerIndex = mViveController.GetIndex();
+	mInputManager = inputManager;
 	
 	mRayOrigin = [0, 0, 0];
 	mRayEnd = [0, 0, 0];
@@ -136,7 +138,6 @@ function ActionController::Draw()
 function ActionController::GetObj()
 {
 	return mViveController.GetObj();
-//	return mActionController;
 }
 
 function ActionController::GetIndex()

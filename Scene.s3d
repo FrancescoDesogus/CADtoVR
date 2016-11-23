@@ -37,6 +37,8 @@ class Scene
 	
 	
 	var mSkyBox;
+	
+	var mObject;
 
 	// Debug controller when no VR is available; a controller is needed to find collisions with the DrawingConnector objects
 	var mDebugController;
@@ -69,14 +71,12 @@ function Scene::Scene(isVRon, inputManager)
 	// Initially no controller is being used
 	mControllerBeingUsedIndex = 0;
 	
-//	mControllersArray = {};
+	mObject = CVmObj(CVmNewMesh("Meshes/lamborghini.aam"));
 		
 	if(mIsVRon)
 	{
-//		aadd(mControllersArray, mInputManager.GetController(1));
-//		aadd(mControllersArray, mInputManager.GetController(2));
-		mMenuController = MenuController(mInputManager.GetController(1));
-		mActionController = ActionController(mInputManager.GetController(2));
+		mMenuController = MenuController(mInputManager.GetController(1), mInputManager);
+		mActionController = ActionController(mInputManager.GetController(2), mInputManager);
 	}
 	else
 	{
@@ -84,14 +84,13 @@ function Scene::Scene(isVRon, inputManager)
 //		mDebugController = ViveController(1);
 		var viveControllerObj1 = ViveController(1);
 		var viveControllerObj2 = ViveController(2);
-		mDebugController = MenuController(viveControllerObj1);
-		mDebugControllerHidden = false;
-		mDebugKeyHit = false;
-		mDebugController.SetRotation(90, 0, 1, 0);
+//		mDebugController = MenuController(viveControllerObj1, mInputManager);
+//		mDebugControllerHidden = false;
+//		mDebugKeyHit = false;
+//		mDebugController.SetRotation(90, 0, 1, 0);
 		
-		mMenuController = mDebugController;
-		mActionController = ActionController(viveControllerObj2);
-//		aadd(mControllersArray, mDebugController);
+		mMenuController = MenuController(viveControllerObj1, mInputManager);
+		mActionController = ActionController(viveControllerObj2, mInputManager);
 	}
 	
 	// Creating skybox
@@ -157,9 +156,11 @@ function Scene::Render()
 	var cameraPosition = mCamera.GetPosition() - mOpenglTranslationOffset;
 
 	mSkyBox.Render(cameraPosition);
-			
+	
+	mObject.Draw();
+	
+	mActionController.Draw();		
 	mMenuController.Draw();
-	mActionController.Draw();
 }
 
 

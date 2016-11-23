@@ -8,8 +8,10 @@ class SelectionPanel : Panel
 
 function SelectionPanel::SelectionPanel(animator)
 {
+	// Calling the method that works as constructor for the parent class
 	Panel::this.Init("Selection Tools", animator);
 	
+	// Creating the icons
 	var selToolObj = ToolIcon("Textures/icons/select.png", "Info tool", 0);	
 	var selToolObj2 = ToolIcon("Textures/icons/select.png", "Info tool", 0);
 	var selToolObj3 = ToolIcon("Textures/icons/select.png", "Info tool", 0);
@@ -17,6 +19,7 @@ function SelectionPanel::SelectionPanel(animator)
 	var selToolObj5 = ToolIcon("Textures/icons/select.png", "Info tool", 0);
 	var selToolObj6 = ToolIcon("Textures/icons/select.png", "Info tool", 0);
 
+	// Adding the set of icons as separate rows
 	aadd(mTools, {selToolObj, selToolObj2, selToolObj3});
 	aadd(mTools, {selToolObj4, selToolObj5});
 	aadd(mTools, {selToolObj6});

@@ -3,8 +3,8 @@
 class MenuController
 {
 	var mViveController;
-	var mMenuController;
 	var mControllerIndex;
+	var mInputManager;
 	
 	var mPanelDistanceToController;
 	var mToolPanelWidth;
@@ -39,10 +39,11 @@ class MenuController
 };
 
 
-function MenuController::MenuController(viveController)
+function MenuController::MenuController(viveController, inputManager)
 {
 	mViveController = viveController;
 	mControllerIndex = mViveController.GetIndex();
+	mInputManager = inputManager;
 	
 //	mToolPanel = CreateGlassPlane(1.0 * SCALE_FACTOR, 1.0 * SCALE_FACTOR, 0.02 * SCALE_FACTOR, [1.0, 1.0, 1.0], 0.5);
 //	mToolPanel.Rotate(90, 1, 0, 0);
@@ -123,8 +124,17 @@ function MenuController::UpdateLogic(dt, isVRon, actionController)
 	
 	var intersectionWasFound = contactPoint != Void;
 	
-	// In case there was an intersection, I tell the action controller to draw the ray from the controller to the contact point found
+	// In case there was an intersection, I tell the action controller to draw the ray from the controller to the contact point found.
+	// If there wasn't an intersection, I call the method anyway to stop the rendering of the ray, in case it was being drawn before
 	actionController.SetDrawRay(intersectionWasFound, rayOrigin, contactPoint);
+	
+	if(intersectionWasFound)
+	{
+		if(mInputManager.PrimaryButtonPressed(actionController.GetIndex()))
+		{
+			mToolPanel.SelectCurrentHoveredTool();
+		}
+	}
 }
 
 function MenuController::Draw()

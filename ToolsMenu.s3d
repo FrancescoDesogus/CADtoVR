@@ -23,6 +23,8 @@ class ToolsMenu
 	
 	var mAnimator;
 	
+	var mCurrentActivePanelIndex;
+	
 	
 	// Public functions
 	Draw();
@@ -47,6 +49,7 @@ class ToolsMenu
 	
 	UpdateLogic(dt, debugMode, rayOrigin, rayEnd);
 	IsIntersectionFound();
+	SelectCurrentHoveredTool();
 };
 
 
@@ -56,6 +59,8 @@ function ToolsMenu::ToolsMenu(viveController)
 	mIntersectionPoint = [0, 0, 0];
 	
 	mAnimator = Animator();
+	
+	mCurrentActivePanelIndex = -1;
 	
 	mPanels = {};
 	mPanelsPositionOffset = {};
@@ -126,11 +131,16 @@ function ToolsMenu::UpdateLogic(dt, isVRon, rayOrigin, rayEnd)
 	// by the MenuController class to pass it to the ActionController class to draw the ray
 	if(panelIndex != -1)
 	{
+		mCurrentActivePanelIndex = panelIndex;
+		
 		mPanels[panelIndex].FindIntersection(rayOrigin, rayEnd);
 		mIntersectionPoint = contactPoint;
 	}
 	else
+	{
+		mCurrentActivePanelIndex = -1;
 		mIntersectionPoint = Void;
+	}
 		
 	mAnimator.UpdateTransitions(dt);
 }
@@ -141,6 +151,11 @@ function ToolsMenu::UpdateLogic(dt, isVRon, rayOrigin, rayEnd)
 function ToolsMenu::IsIntersectionFound()
 {
 	return mIntersectionPoint;
+}
+
+function ToolsMenu::SelectCurrentHoveredTool()
+{
+	mPanels[mCurrentActivePanelIndex].SelectCurrentHoveredTool();
 }
 
 function ToolsMenu::Draw()

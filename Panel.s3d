@@ -59,6 +59,7 @@ class Panel
 	IsColliding(rayOrigin, rayEnd, contactPoint);
 	
 	FindIntersection(rayOrigin, rayEnd);
+	SelectCurrentHoveredTool();
 	
 	// Public functions that need to be overwritten; the classes that will inherit from this class will still need to call
 	// this method in their override function as the first call, to update general things of the panel
@@ -166,6 +167,31 @@ function Panel::FindIntersection(rayOrigin, rayEnd)
 	{
 		mAnimator.CreateScalingTransition(mCurrentHoveredTool.GetObj(), mCurrentHoveredTool.GetScale(), [1, 1, 1], 0.1, false);	
 		mCurrentHoveredTool = Void;
+	}
+}
+
+function Panel::SelectCurrentHoveredTool()
+{
+	if(mCurrentHoveredTool != Void)
+	{
+//		mPanelName.SetPivotPoint(mPanelName.LocalToWorld([-mPanelName.GetWidthOfLine(0) / 2.0, 0, 0]));
+		mAnimator.CreateScalingTransition(mPanelName.GetObj(), mPanelName.GetScale(), [0, 1, 0], 0.1, false, 2);	
+		
+		for(var i = 0; i < len(mTools); i++)
+		{
+			var toolRow = mTools[i];
+			
+			for(var j = 0; j < len(toolRow); j++)
+			{
+				var toolIcon = toolRow[j];
+				
+				if(toolIcon != mCurrentHoveredTool)
+					mAnimator.CreateScalingTransition(toolIcon.GetObj(), toolIcon.GetScale(), [0, 0, 0], 0.1, false, 2);	
+			}
+		}
+		
+		var endPos = mPanel.LocalToWorld([-GetWidth() + 0.5 * SCALE_FACTOR, GetHeight() - 0.5 * SCALE_FACTOR, 0.01 * SCALE_FACTOR]);	
+		mAnimator.CreateTransition(mCurrentHoveredTool, mCurrentHoveredTool.GetPosition(), endPos, 5, false, 2);
 	}
 }
 
