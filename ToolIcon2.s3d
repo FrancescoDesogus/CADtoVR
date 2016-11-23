@@ -6,9 +6,10 @@ class ToolIcon
 	var mIconHeight;
 	
 	// String containing the name of the tool this icon represents
-	var mToolNameObj;
+	var mToolName;
 	
-	var mToolNameTextVisible;
+	// ID of the tool
+	var mToolID;
 	
 	// Obj of the icon
 	var mIcon;
@@ -45,18 +46,20 @@ class ToolIcon
 	IsColliding(rayOrigin, rayEnd, contactPoint);
 	SetDefaultPosition(position);
 	GetDefaultPosition();
-	SetIconNameVisibility(visible);
 };
 
 
-function ToolIcon::ToolIcon(textureString, name)
+function ToolIcon::ToolIcon(textureString, name, id)
 {
 	mIconWidth = 0.15 * SCALE_FACTOR;
 	mIconHeight = 0.15 * SCALE_FACTOR;
 	
 	var iconHalfWidth = mIconWidth / 2.0;
 	var iconHalfHeight = mIconWidth / 2.0;
-		
+	
+	mToolName = name;
+	mToolID = id;
+	
 	mDefaultPosition = [0, 0, 0];
 	
 	var iconMesh = CVmNewMesh(VRP_PLANE, 1, [-iconHalfWidth, -iconHalfHeight, 0], [iconHalfWidth, iconHalfHeight, 0], 2, 2);
@@ -72,32 +75,6 @@ function ToolIcon::ToolIcon(textureString, name)
 	
 	mIcon = CVmObj(iconMesh);
 	mIconCollisionObj = CVmObj(iconCollisionMesh);
-	
-	
-	var nameText = Text(name, 0.2, [1, 1, 1]);
-	
-	var toolNameTextWidth = nameText.GetWidthOfLine(0) * 2.3;
-	var toolNameTextHeight = nameText.GetFontHeight() * 1.5;
-	
-	mToolNameObj = CreateGlassPlane(toolNameTextWidth, toolNameTextHeight, 0.01 * SCALE_FACTOR, [1.0, 1.0, 1.0], 0.8);
-	
-	mToolNameObj.AddChild(nameText.GetObj(), 0, -toolNameTextHeight / 4.0, 0.01 * SCALE_FACTOR);
-	
-	mToolNameObj.Hide();
-	
-	mIcon.AddChild(mToolNameObj, mIconWidth * 1.5, 0, 0.025 * SCALE_FACTOR);
-	
-	mToolNameTextVisible = false;
-}
-
-function ToolIcon::SetIconNameVisibility(visible)
-{
-	mToolNameTextVisible = visible;
-	
-	if(mToolNameTextVisible)
-		mToolNameObj.Unhide();
-	else
-		mToolNameObj.Hide();
 }
 
 function ToolIcon::SetCollisionPosition(position)
@@ -137,10 +114,15 @@ function ToolIcon::GetObj()
 	return mIcon;
 }
 
-//function ToolIcon::GetName()
-//{
-//	return mToolName;
-//}
+function ToolIcon::GetName()
+{
+	return mToolName;
+}
+
+function ToolIcon::GetID()
+{
+	return mToolID;	
+}
 
 function ToolIcon::SetPosition(position)
 {

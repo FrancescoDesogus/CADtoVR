@@ -1,4 +1,5 @@
 #include "ToolIcon.s3d"
+#include "Tool.s3d"
 #include "Panel.s3d"
 
 #include "SelectionPanel.s3d"

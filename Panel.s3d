@@ -125,14 +125,33 @@ function Panel::UpdateLogic(isVRon)
 			// For each row, I iterate over every icon in it
 			for(var j = 0; j < toolsInRow; j++)
 			{
-				var toolIcon = toolRow[j];
+				var toolIcon = toolRow[j].GetIconObj();
 	
 				// Finally, I can set the position and orientation of the icon
 				toolIcon.SetCollisionPosition(mPanel.LocalToWorld(toolIcon.GetDefaultPosition()));
 				toolIcon.SetCollisionRotationMatrix(mPanel.GetRotationMatrix());
 			}
 		}
-	
+	}
+	else
+	{
+		if(mPanelName.IsVisible() && mPanelName.GetScale().x <= 0)
+		{
+			mPanelName.Hide();
+			
+			for(var i = 0; i < len(mTools); i++)
+			{
+				var toolRow = mTools[i];
+				
+				for(var j = 0; j < len(toolRow); j++)
+				{
+					var toolIcon = toolRow[j].GetIconObj();
+					
+					if(toolIcon != mSelectedTool)
+						toolIcon.Hide();
+				}
+			}
+		}
 	}
 }
 
@@ -153,7 +172,7 @@ function Panel::FindIntersection(rayOrigin, rayEnd)
 			
 			for(var j = 0; j < len(toolRow) && !found; j++)
 			{
-				var toolIcon = toolRow[j];
+				var toolIcon = toolRow[j].GetIconObj();
 				
 				// If this icon is being hit, we're done
 				if(toolIcon.IsColliding(rayOrigin, rayEnd))
@@ -165,6 +184,8 @@ function Panel::FindIntersection(rayOrigin, rayEnd)
 					{
 						mCurrentHoveredTool = toolIcon;
 						mAnimator.CreateScalingTransition(toolIcon.GetObj(), toolIcon.GetScale(), [1.35, 1.35, 1], 0.1, false);	
+						
+						mCurrentHoveredTool.SetIconNameVisibility(true);
 					}
 				}
 			}
@@ -174,24 +195,25 @@ function Panel::FindIntersection(rayOrigin, rayEnd)
 		if(!found && mCurrentHoveredTool != Void)
 		{
 			mAnimator.CreateScalingTransition(mCurrentHoveredTool.GetObj(), mCurrentHoveredTool.GetScale(), [1, 1, 1], 0.1, false);	
+			mCurrentHoveredTool.SetIconNameVisibility(false);
 			mCurrentHoveredTool = Void;
 		}
 	}
 	else
 	{
-		if(mPanelName.IsVisible() && mPanelName.GetScale().x <= 0)
-		{
-			mPanelName.Hide();
-			
-			for(var i = 0; i < len(mTools) && !found; i++)
-			{
-				var toolRow = mTools[i];
-				
-				for(var j = 0; j < len(toolRow) && !found; j++)
-					if(toolRow[j] != mCurrentHoveredTool)
-						toolRow[j].Hide();
-			}
-		}
+//		if(mPanelName.IsVisible() && mPanelName.GetScale().x <= 0)
+//		{
+//			mPanelName.Hide();
+//			
+//			for(var i = 0; i < len(mTools) && !found; i++)
+//			{
+//				var toolRow = mTools[i];
+//				
+//				for(var j = 0; j < len(toolRow) && !found; j++)
+//					if(toolRow[j] != mCurrentHoveredTool)
+//						toolRow[j].Hide();
+//			}
+//		}
 	}
 }
 
@@ -199,6 +221,8 @@ function Panel::SelectCurrentHoveredTool()
 {
 	if(mCurrentHoveredTool != Void)
 	{
+		mCurrentHoveredTool.SetIconNameVisibility(false);
+		
 //		mPanelName.SetPivotPoint(mPanelName.LocalToWorld([-mPanelName.GetWidthOfLine(0) / 2.0, 0, 0]));
 		mAnimator.CreateScalingTransition(mPanelName.GetObj(), mPanelName.GetScale(), [0, 1, 0], 0.2, false, 2);	
 		
@@ -208,7 +232,7 @@ function Panel::SelectCurrentHoveredTool()
 			
 			for(var j = 0; j < len(toolRow); j++)
 			{
-				var toolIcon = toolRow[j];
+				var toolIcon = toolRow[j].GetIconObj();
 				
 				if(toolIcon != mCurrentHoveredTool)
 					mAnimator.CreateScalingTransition(toolIcon.GetObj(), toolIcon.GetScale(), [0, 0, 0], 0.2, false, 2);	
@@ -244,7 +268,7 @@ function Panel::DeselectCurrentTool()
 			
 			for(var j = 0; j < len(toolRow); j++)
 			{
-				var toolIcon = toolRow[j];
+				var toolIcon = toolRow[j].GetIconObj();
 				
 				if(toolIcon != mSelectedTool)
 				{
@@ -294,7 +318,7 @@ function Panel::GenerateIconsPositions()
 		// For each row, I iterate over every icon in it
 		for(var j = 0; j < toolsInRow; j++)
 		{
-			var toolIcon = toolRow[j];
+			var toolIcon = toolRow[j].GetIconObj();
 			
 			// To find the x coordinate (in the local space of the panel) I use this formula that takes into account the whole range
 			// in which icons are allowed to be (found by writing examples with pen and paper)
