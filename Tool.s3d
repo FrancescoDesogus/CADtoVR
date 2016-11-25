@@ -59,7 +59,9 @@ function Tool::SetIconCollisionRotationMatrix(matrix)
 
 function Tool::Draw()
 {
+	glDisable(GL_LIGHTING);
 	mToolIcon.Draw();
+	glEnable(GL_LIGHTING);
 }
 
 function Tool::GetIconWidth()

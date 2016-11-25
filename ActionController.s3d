@@ -15,6 +15,9 @@ class ActionController
 	var mRayEnd;
 	var mDrawRay;
 	
+	var mDashedLineShader;
+	var mDashedLinesOffset;
+	
 	
 	// Public functions
 	Draw();
@@ -37,7 +40,7 @@ class ActionController
 	IsVisible();
 	IsCollidingBBox(object);
 	
-	UpdateLogic(debugMode);
+	UpdateLogic(dt, debugMode);
 	SetDrawRay(drawRay, rayOrigin, rayEnd);
 };
 
@@ -51,9 +54,12 @@ function ActionController::ActionController(viveController, inputManager)
 	mRayOrigin = [0, 0, 0];
 	mRayEnd = [0, 0, 0];
 	mDrawRay = false;
+	
+	mDashedLineShader = CVmShaderProgram("Shaders/dashedLineShader.glsl");
+	mDashedLinesOffset = 0;
 }
 
-function ActionController::UpdateLogic(debugMode)
+function ActionController::UpdateLogic(dt, debugMode)
 {
 	if(!debugMode)
 	{
@@ -109,6 +115,8 @@ function ActionController::UpdateLogic(debugMode)
 //			
 		mViveController.SetPosition(mViveController.GetPosition() + [xOffset, yOffset, zOffset]);
 	}
+	
+	mDashedLinesOffset += 0.001;
 }
 
 function ActionController::SetDrawRay(drawRay, rayOrigin, rayEnd)
@@ -124,14 +132,23 @@ function ActionController::Draw()
 	
 	if(mDrawRay)
 	{
-		glLineWidth(3); 		
-		glColor([0, 0, 1]); 
-		
-		// I draw the ray as a simple opengl line
-		glBegin(GL_LINES);
-			glVertex(mRayOrigin);
-			glVertex(mRayEnd);		
-		glEnd();
+		// Rendering of the ray
+		mDashedLineShader.Start();
+			// Parameters for the ray's shader
+			mDashedLineShader.SetParameter("sourcePosition", mRayOrigin);
+			mDashedLineShader.SetParameter("lineLength", Modulus(mRayEnd - mRayOrigin));
+			mDashedLineShader.SetParameter("color", [0.7, 0, 0.7]);
+			mDashedLineShader.SetParameter("ticksLength", 0.17 * SCALE_FACTOR);
+			mDashedLineShader.SetParameter("offset", mDashedLinesOffset);
+			
+			glLineWidth(1.5); 
+			
+			// I draw the ray as a simple opengl line
+			glBegin(GL_LINES);
+				glVertex(mRayOrigin);
+				glVertex(mRayEnd);		
+			glEnd();
+		mDashedLineShader.Stop();
 	}
 }
 

@@ -136,7 +136,7 @@ function MenuController::UpdateLogic(dt, isVRon, actionController)
 		}
 	}
 	
-	if(mInputManager.GripSinglePressed(mViveController.GetIndex()))
+	if(mInputManager.GripSinglePressed(actionController.GetIndex()))
 	{
 		mToolPanel.DeSelectCurrentTool();
 	}
