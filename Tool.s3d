@@ -1,14 +1,24 @@
  
 class Tool
 {
+	var mActionController;
+	
 	// String containing the name of the tool this icon represents
-	var mToolName;
+	var mToolNameString;
 	
 	// ID of the tool
-	var mToolID;
+//	var mToolID;
 	
 	// ToolIcon object containing the icon
 	var mToolIcon;
+	
+	var mPanel;
+	
+	var mToolNameText;
+	
+	var mIsToolActive;
+	
+	var mAnimator;
 	
 	
 	// Public functions
@@ -36,25 +46,68 @@ class Tool
 	IsCollidingBBox(object);
 	
 	IsIconColliding(rayOrigin, rayEnd, contactPoint);
+	IsToolActive();
+	SetToolActive(active);
+//	UpdateLogic(dt, viveController);
+
+	Init(textureString, name, panel, actionController, animator);
 };
 
 
-function Tool::Tool(textureString, name, id)
+function Tool::Tool(textureString, name, panel, actionController, animator)
 {
-	mToolName = name;
-	mToolID = id;
+//	mToolNameString = name;
+////	mToolID = id;
+//	mPanel = panel;
+//	mAnimator = animator;
+//	
+//	mToolNameText = Text(name, 0.3, [1, 1, 1]);
+//	mPanel.AddChild(mToolNameText.GetObj(), 0.05 * SCALE_FACTOR, mPanel.GetHeight() / 2.0 - mToolNameText.GetFontHeight(), 0.01 * SCALE_FACTOR);
+//	mToolNameText.Hide();
+//	
+//	mToolIcon = ToolIcon(textureString, name);
+//	
+//	mIsToolActive = false;
+}
+
+function Tool::Init(textureString, name, panel, actionController, animator)
+{
+	mToolNameString = name;
+	mPanel = panel;
+	mActionController = actionController;
+	mAnimator = animator;
+	
+	
+	mToolNameText = Text(name, 0.3, [1, 1, 1]);
+	mPanel.AddChild(mToolNameText.GetObj(), 0.05 * SCALE_FACTOR, mPanel.GetHeight() / 2.0 - mToolNameText.GetFontHeight(), 0.01 * SCALE_FACTOR);
+	mToolNameText.Hide();
 	
 	mToolIcon = ToolIcon(textureString, name);
+	
+	mIsToolActive = false;
 }
 
-function Tool::SetIconCollisionPosition(position)
+function Tool::IsToolActive()
 {
-	mToolIcon.SetCollisionPosition(position);
+	return mIsToolActive;
 }
 
-function Tool::SetIconCollisionRotationMatrix(matrix)
+function Tool::SetToolActive(active)
 {
-	mToolIcon.SetCollisionRotationMatrix(matrix);
+	mIsToolActive = active;
+	
+	mToolNameText.SetVisibility(active);
+	
+	var initialTextScale = [1, 0, 1];
+	var endingTextScale = {initialTextScale, [1, 1, 1]};
+	
+	if(!active)
+	{
+		initialTextScale = [1, 1, 1];
+		endingTextScale = [1, 0, 1];
+	}
+		
+	mAnimator.CreateScalingTransition(mToolNameText.GetObj(), initialTextScale, endingTextScale, 0.2, false, 2);
 }
 
 function Tool::Draw()
@@ -62,22 +115,11 @@ function Tool::Draw()
 	glDisable(GL_LIGHTING);
 	mToolIcon.Draw();
 	glEnable(GL_LIGHTING);
-}
-
-function Tool::GetIconWidth()
-{
-	return mToolIcon.GetWidth();
-}
-
-
-function Tool::GetIconHeight()
-{
-	return mToolIcon.GetHeight();
-}
-
-function Tool::IsIconColliding(rayOrigin, rayEnd, contactPoint)
-{
-	return mToolIcon.IsColliding(rayOrigin, rayEnd, &contactPoint);
+	
+	if(mIsToolActive)
+	{
+		
+	}
 }
 
 function Tool::GetIconObj()
@@ -87,13 +129,13 @@ function Tool::GetIconObj()
 
 function Tool::GetName()
 {
-	return mToolName;
+	return mToolNameString;
 }
 
-function Tool::GetID()
-{
-	return mToolID;	
-}
+//function Tool::GetID()
+//{
+//	return mToolID;	
+//}
 
 function Tool::SetPosition(position)
 {
@@ -133,12 +175,12 @@ function Tool::LocalToWorld(point)
 
 function Tool::Hide()
 {
-	mToolIcon.Hide();
+//	mToolIcon.Hide();
 }
 
 function Tool::Unhide()
 {
-	mToolIcon.Unhide();
+//	mToolIcon.Unhide();
 }
 
 function Tool::SetScale(x, y, z)

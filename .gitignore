@@ -52,3 +52,5 @@ CADtoVR.s3d.bin
 CADtoVR.s3d.asm
 CADtoVR.s3d.asm
 CADtoVR.s3d.bin
+CADtoVR.s3d.bin.dbg
+*.dbg

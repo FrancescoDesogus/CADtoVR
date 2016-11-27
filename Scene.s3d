@@ -75,8 +75,8 @@ function Scene::Scene(isVRon, inputManager)
 		
 	if(mIsVRon)
 	{
-		mMenuController = MenuController(mInputManager.GetController(1), mInputManager);
 		mActionController = ActionController(mInputManager.GetController(2), mInputManager);
+		mMenuController = MenuController(mInputManager.GetController(1), mActionController, mInputManager);
 	}
 	else
 	{
@@ -84,8 +84,8 @@ function Scene::Scene(isVRon, inputManager)
 		var viveControllerObj1 = ViveController(1);
 		var viveControllerObj2 = ViveController(2);
 		
-		mMenuController = MenuController(viveControllerObj1, mInputManager);
 		mActionController = ActionController(viveControllerObj2, mInputManager);
+		mMenuController = MenuController(viveControllerObj1, mActionController, mInputManager);
 	}
 	
 	// Creating skybox

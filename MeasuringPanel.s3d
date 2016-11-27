@@ -2,25 +2,25 @@
 class MeasuringPanel : Panel
 {
 	// Public inherited functions
-	UpdateLogic(isVRon);
+	UpdateLogic(dt, actionController);
 };
 
 
-function MeasuringPanel::MeasuringPanel(animator)
+function MeasuringPanel::MeasuringPanel(actionController, animator)
 {
-	Panel::this.Init("Measuring Tools", animator); 
+	Panel::this.Init("Measuring Tools", actionController, animator); 
 	
-	var selToolObj = Tool("Textures/icons/distance.png", "Distance tool", 0);	
-	var selToolObj2 = Tool("Textures/icons/distance.png", "Distance tool", 0);
-	var selToolObj3 = Tool("Textures/icons/distance.png", "Distance tool", 0);
-	var selToolObj4 = Tool("Textures/icons/distance.png", "Distance tool", 0);
-	var selToolObj5 = Tool("Textures/icons/distance.png", "Info tool", 0);
-	var selToolObj6 = Tool("Textures/icons/distance.png", "Info tool", 0);
+//	var selToolObj = Tool("Textures/icons/distance.png", "Distance tool", Panel::this, mAnimator);	
+//	var selToolObj2 = Tool("Textures/icons/distance.png", "Distance tool", Panel::this, mAnimator);
+//	var selToolObj3 = Tool("Textures/icons/distance.png", "Distance tool", Panel::this, mAnimator);
+//	var selToolObj4 = Tool("Textures/icons/distance.png", "Distance tool", Panel::this, mAnimator);
+//	var selToolObj5 = Tool("Textures/icons/distance.png", "Info tool", Panel::this, mAnimator);
+//	var selToolObj6 = Tool("Textures/icons/distance.png", "Info tool", Panel::this, mAnimator);
 	
 
-	aadd(mTools, {selToolObj, selToolObj2, selToolObj3});
-	aadd(mTools, {selToolObj6});
-	aadd(mTools, {selToolObj4, selToolObj5});
+//	aadd(mTools, {selToolObj, selToolObj2, selToolObj3});
+//	aadd(mTools, {selToolObj6});
+//	aadd(mTools, {selToolObj4, selToolObj5});
 	
 	Panel::this.GenerateIconsPositions();
 }
@@ -28,8 +28,8 @@ function MeasuringPanel::MeasuringPanel(animator)
 /*
  * This method currently only updates the position of the icons in the panel
  */
-function MeasuringPanel::UpdateLogic(isVRon)
+function MeasuringPanel::UpdateLogic(dt, actionController)
 {
-	Panel::this.UpdateLogic(isVRon);
+	Panel::this.UpdateLogic(dt, actionController);
 }
 

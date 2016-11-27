@@ -1,0 +1,70 @@
+
+class NotesTool : Tool
+{
+	var mPostItObj;
+	
+	var mPostItShader;
+	
+	// Public functions
+	UpdateLogic(dt);
+	
+	Draw();
+};
+
+
+function NotesTool::NotesTool(panel, actionController, animator)
+{
+	// Calling the method that works as constructor for the parent class
+	Tool::this.Init("Textures/icons/notes.png", "Annotations", panel, actionController, animator);
+	
+//	mPostItObj = CreateGlassPlane(0.5 * SCALE_FACTOR, 0.5 * SCALE_FACTOR, 0.01 * SCALE_FACTOR, [1.0, 1.0, 1.0], 0.5);
+	
+	var postItHalfWidth = 0.5 * SCALE_FACTOR / 2.0;
+	var postItHalfHeight = 0.5 * SCALE_FACTOR / 2.0;
+	
+	var postItMesh = CVmNewMesh(VRP_PLANE, 1, [-postItHalfWidth, -postItHalfHeight, 0], [postItHalfWidth, postItHalfHeight, 0], 2, 2);
+	
+//	var postItMaterial = CVmMaterial();
+//	postItMaterial.Ambient = [0, 0, 0];
+//	postItMaterial.Shininess = 0.05;
+//	postItMaterial.Specular = [0,0,0];
+//	postItMaterial.SetTexture(CVmTexture("Textures/postit.png"));
+//	
+//	postItMesh.SetMaterial(postItMaterial);
+	
+	mPostItObj = CVmObj(postItMesh);
+	
+	mPostItShader = CVmShaderProgram("Shaders/postItShader.glsl");
+}
+
+
+function NotesTool::Draw()
+{
+	// Calling the base class method
+	Tool::this.Draw(); 
+
+	if(IsToolActive())
+	{
+		mPostItShader.Start();
+			mPostItShader.SetParameter("tex", CVmTexture("Textures/postit.png"));
+			
+			mPostItObj.Draw();
+		mPostItShader.Stop();
+	}
+}
+
+/*
+ * This method currently only updates the position of the icons in the panel
+ */
+function NotesTool::UpdateLogic(dt)
+{
+	// Calling the base class method; it updates the position of the icons
+//	Panel::this.UpdateLogic(isVRon); 
+
+	if(IsToolActive())
+	{
+		mPostItObj.SetPosition(mActionController.GetControllerTipCoordinates());
+		mPostItObj.SetRotationMatrix(mActionController.GetRotationMatrix());
+	}
+}
+

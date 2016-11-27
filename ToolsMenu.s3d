@@ -7,7 +7,8 @@
 
 class ToolsMenu
 {
-	var mViveController;
+	var mActionController;
+	var mMenuController;
 	
 	var mToolsMenuDistanceToController;
 	var mToolPanelWidth;
@@ -49,16 +50,18 @@ class ToolsMenu
 	IsVisible();
 	IsCollidingBBox(object);
 	
-	UpdateLogic(dt, debugMode, rayOrigin, rayEnd);
+	UpdateLogic(dt, actionController);
 	IsIntersectionFound();
 	SelectCurrentHoveredTool();
 	DeSelectCurrentTool();
 };
 
 
-function ToolsMenu::ToolsMenu(viveController)
+function ToolsMenu::ToolsMenu(menuController, actionController)
 {
-	mViveController = viveController;
+	mMenuController = menuController;
+	mActionController = actionController;
+	
 	mIntersectionPoint = [0, 0, 0];
 	
 	mAnimator = Animator();
@@ -71,16 +74,16 @@ function ToolsMenu::ToolsMenu(viveController)
 	mPanelsPositionOffset = {};
 	mPanelsRotationQuaternion = {};
 	
-	var selectionPanelObj = SelectionPanel(mAnimator);
-	var positionOffset = [0, mViveController.GetHeight() / 2.0, selectionPanelObj.GetHeight() / 3.0];
+	var selectionPanelObj = SelectionPanel(actionController, mAnimator);
+	var positionOffset = [0, mMenuController.GetHeight() / 2.0, selectionPanelObj.GetHeight() / 3.0];
 	var quaternion = EulerToQuaternion([-90, 0, 0]);
 	
 	aadd(mPanels, selectionPanelObj);
 	aadd(mPanelsPositionOffset, positionOffset);
 	aadd(mPanelsRotationQuaternion, quaternion);
 	
-	selectionPanelObj = MeasuringPanel(mAnimator);
-	positionOffset = [-selectionPanelObj.GetWidth() / 2.0, -selectionPanelObj.GetHeight() / 3.0, mViveController.GetDepth() / 3.0];
+	selectionPanelObj = MeasuringPanel(actionController, mAnimator);
+	positionOffset = [-selectionPanelObj.GetWidth() / 2.0, -selectionPanelObj.GetHeight() / 3.0, mMenuController.GetDepth() / 3.0];
 	quaternion = EulerToQuaternion([0, -90, 90]);
 	
 	aadd(mPanels, selectionPanelObj);
@@ -88,8 +91,11 @@ function ToolsMenu::ToolsMenu(viveController)
 	aadd(mPanelsRotationQuaternion, quaternion);
 }
 
-function ToolsMenu::UpdateLogic(dt, isVRon, rayOrigin, rayEnd)
+function ToolsMenu::UpdateLogic(dt, actionController)
 {
+	var rayOrigin = actionController.GetPosition();
+	var rayEnd = actionController.GetDirection() * CameraGetCurrent().GetZFar();
+	
 	var contactDistance = CameraGetCurrent().GetZFar();
 	var contactPoint;
 	var panelIndex = -1;
@@ -100,8 +106,8 @@ function ToolsMenu::UpdateLogic(dt, isVRon, rayOrigin, rayEnd)
 		var panelObj = mPanels[i];
 		
 		// Updating the position of the panel with respect to the menu controller
-		panelObj.SetPosition(mViveController.LocalToWorld(mPanelsPositionOffset[i]));
-		panelObj.SetRotationMatrix(mViveController.GetRotationMatrix());
+		panelObj.SetPosition(mMenuController.LocalToWorld(mPanelsPositionOffset[i]));
+		panelObj.SetRotationMatrix(mMenuController.GetRotationMatrix());
 		
 		var rotation = QuaternionToAxisAngle(mPanelsRotationQuaternion[i]);
 		panelObj.Rotate(rotation[3] * RAD_TO_GRAD, rotation.x, rotation.y, rotation.z);
@@ -126,7 +132,7 @@ function ToolsMenu::UpdateLogic(dt, isVRon, rayOrigin, rayEnd)
 		}
 				
 		// I update the logic of the panel (currently it's only the position of the icons)
-		panelObj.UpdateLogic(isVRon);
+		panelObj.UpdateLogic(dt, actionController);
 	}
 	
 	// If a panel was intersected, I check if any icon was intersected, and save the contact point for later (it will be used
@@ -188,7 +194,7 @@ function ToolsMenu::GetObj()
 
 //function ToolsMenu::SetActionAvailable(isActionAvailable)
 //{
-//	mViveController.SetActionAvailable(isActionAvailable);
+//	mMenuController.SetActionAvailable(isActionAvailable);
 //}
 
 function ToolsMenu::SetPosition(position)
@@ -244,7 +250,7 @@ function ToolsMenu::SetScale(x, y, z)
 
 //function ToolsMenu::IsVisible()
 //{
-//	return mViveController.IsVisible();
+//	return mMenuController.IsVisible();
 //}
 
 function ToolsMenu::Translate(transl)

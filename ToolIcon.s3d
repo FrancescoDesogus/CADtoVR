@@ -5,16 +5,26 @@ class ToolIcon
 	var mIconWidth;
 	var mIconHeight;
 	
-	// String containing the name of the tool this icon represents
+	// Text object that is displayed when the icon is hovered
 	var mToolNameObj;
 	
+	// Boolean that is true if the text object is visible
 	var mToolNameTextVisible;
 	
 	// Obj of the icon
 	var mIcon;
 	
+	// In order to check if the icon is being pointed (i.e. collides with a ray) I use another object that is almost always
+	// positioned where the icon is positioned. Basically I do this to overcome problems with adding objects as children of
+	// other objects when doing raytracing (the method IsColliding() doesn't work in that case). So, the icon itself
+	// is used as child of the panel (this way I can easily animate it with transitions and stuff like that), while
+	// the collision object is manually positioned over the icon (and when the icon is moved with an animation this object
+	// DOES NOT follow the icon)
 	var mIconCollisionObj;
 	
+	// Vector that holds the default position of the icon inside the panel in which is put. It's defined in the local
+	// coordinate system of the panel, and it's calculated when the panel is created (because it needs to now how many
+	// icons are in the panel in order to obtain the position)
 	var mDefaultPosition;
 	
 	
@@ -49,6 +59,10 @@ class ToolIcon
 };
 
 
+/*
+ * Constructor; takes as parameter the name of the texture to be used for the icon and the string name of the tool, 
+ * that is displayed when the icon is hovered
+ */
 function ToolIcon::ToolIcon(textureString, name)
 {
 	mIconWidth = 0.15 * SCALE_FACTOR;
@@ -73,23 +87,30 @@ function ToolIcon::ToolIcon(textureString, name)
 	mIcon = CVmObj(iconMesh);
 	mIconCollisionObj = CVmObj(iconCollisionMesh);
 	
-	
+	// Text object for the name that appears when the icon is hovered
 	var nameText = Text(name, 0.2, [1, 1, 1]);
 	
+	// Sizes of the text
 	var toolNameTextWidth = nameText.GetWidthOfLine(0) * 2.3;
 	var toolNameTextHeight = nameText.GetFontHeight() * 1.5;
 	
+	// Container plane for the text
 	mToolNameObj = CreateGlassPlane(toolNameTextWidth, toolNameTextHeight, 0.01 * SCALE_FACTOR, [1.0, 1.0, 1.0], 0.8);
 	
+	// Adding the text as child of the container
 	mToolNameObj.AddChild(nameText.GetObj(), 0, -toolNameTextHeight / 4.0, 0.01 * SCALE_FACTOR);
 	
+	// Initially the name object is hidden
 	mToolNameObj.Hide();
-	
-	mIcon.AddChild(mToolNameObj, mIconWidth * 1.5, 0, 0.025 * SCALE_FACTOR);
-	
 	mToolNameTextVisible = false;
+	
+	// Adding the name object as child of the icon itself
+	mIcon.AddChild(mToolNameObj, mIconWidth * 1.5, 0, 0.025 * SCALE_FACTOR);
 }
 
+/*
+ * This method toogles the visibility of the tool icon name
+ */
 function ToolIcon::SetIconNameVisibility(visible)
 {
 	mToolNameTextVisible = visible;
@@ -100,11 +121,17 @@ function ToolIcon::SetIconNameVisibility(visible)
 		mToolNameObj.Hide();
 }
 
+/*
+ * This method sets the position of the collision plane, i.e. the plane that it's used to check the intersection with rays
+ */
 function ToolIcon::SetCollisionPosition(position)
 {
 	mIconCollisionObj.SetPosition(position);
 }
 
+/*
+ * This method sets the rotation matrix of the collision plane, i.e. the plane that it's used to check the intersection with rays
+ */
 function ToolIcon::SetCollisionRotationMatrix(matrix)
 {
 	mIconCollisionObj.SetRotationMatrix(matrix);
@@ -136,11 +163,6 @@ function ToolIcon::GetObj()
 {
 	return mIcon;
 }
-
-//function ToolIcon::GetName()
-//{
-//	return mToolName;
-//}
 
 function ToolIcon::SetPosition(position)
 {

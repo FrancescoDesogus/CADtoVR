@@ -52,6 +52,7 @@ class Text
 	Draw();
 	Hide();
 	Unhide();
+	SetVisibility(visible);
 	IsVisible();
 	LocalToWorld(point);
 	SetPivotPoint(point);
@@ -267,6 +268,14 @@ function Text::Unhide()
 {
 	mIsVisible = true;
 	mTextContainerObj.Unhide();
+}
+
+function Text::SetVisibility(visible)
+{
+	if(visible)
+		Unhide();
+	else
+		Hide();
 }
 
 function Text::IsVisible()

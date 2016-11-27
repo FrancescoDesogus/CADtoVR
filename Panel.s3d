@@ -5,6 +5,8 @@
  */
 class Panel
 {
+	var mActionController;
+	
 	// Sizes of the panel
 	var mToolPanelWidth;
 	var mToolPanelHeight;
@@ -40,13 +42,14 @@ class Panel
 	
 	// This method works as the constructor for the class: the classes that will inherit from this class will need to call
 	// this in their constructor as the first call
-	Init(panelName, animator);
+	Init(panelName, actionController, animator);
 	
 	// Public functions (protected)
 	Draw();
 	GetWidth();
 	GetHeight();
 	GetObj();
+	AddChild(child, x, y, z);
 	SetPosition(position);
 	Translate(transl);
 	GetPosition();
@@ -69,7 +72,7 @@ class Panel
 	
 	// Public functions that need to be overwritten; the classes that will inherit from this class will still need to call
 	// this method in their override function as the first call, to update general things of the panel
-	UpdateLogic(debugMode);
+	UpdateLogic(dt, actionController);
 };
 
 
@@ -77,8 +80,9 @@ class Panel
  * This method works as the constructor. It takes as input the string corresponding to the name of the panel and a reference to an
  * Animator object used for animations by the ToolsMenu class
  */
-function Panel::Init(panelName, animator)
+function Panel::Init(panelName, actionController, animator)
 {
+	mActionController = actionController;
 	mAnimator = animator;
 	
 	mCurrentHoveredTool = Void;
@@ -108,7 +112,7 @@ function Panel::Init(panelName, animator)
 /*
  * This method currently only updates the position of the icons in the panel
  */
-function Panel::UpdateLogic(isVRon)
+function Panel::UpdateLogic(dt, actionController)
 {
 	var toolsRows = len(mTools);
 	
@@ -147,11 +151,13 @@ function Panel::UpdateLogic(isVRon)
 				{
 					var toolIcon = toolRow[j].GetIconObj();
 					
-					if(toolIcon != mSelectedTool)
+					if(toolIcon != mSelectedTool.GetIconObj())
 						toolIcon.Hide();
 				}
 			}
 		}
+		
+		mSelectedTool.UpdateLogic(dt, actionController);
 	}
 }
 
@@ -180,12 +186,12 @@ function Panel::FindIntersection(rayOrigin, rayEnd)
 					found = true;
 					
 					// If this icon wasn't being hovered, now it is. So I save this information and create an animation
-					if(toolIcon != mCurrentHoveredTool)
+					if(toolRow[j] != mCurrentHoveredTool)
 					{
-						mCurrentHoveredTool = toolIcon;
+						mCurrentHoveredTool = toolRow[j];
 						mAnimator.CreateScalingTransition(toolIcon.GetObj(), toolIcon.GetScale(), [1.35, 1.35, 1], 0.1, false);	
 						
-						mCurrentHoveredTool.SetIconNameVisibility(true);
+						toolIcon.SetIconNameVisibility(true);
 					}
 				}
 			}
@@ -194,8 +200,9 @@ function Panel::FindIntersection(rayOrigin, rayEnd)
 		// If no icon was hit and there was an icon hovered, now it's not anymore, so I save this fact and create an animation
 		if(!found && mCurrentHoveredTool != Void)
 		{
-			mAnimator.CreateScalingTransition(mCurrentHoveredTool.GetObj(), mCurrentHoveredTool.GetScale(), [1, 1, 1], 0.1, false);	
-			mCurrentHoveredTool.SetIconNameVisibility(false);
+			var toolIcon = mCurrentHoveredTool.GetIconObj();
+			mAnimator.CreateScalingTransition(toolIcon.GetObj(), toolIcon.GetScale(), [1, 1, 1], 0.1, false);	
+			toolIcon.SetIconNameVisibility(false);
 			mCurrentHoveredTool = Void;
 		}
 	}
@@ -221,7 +228,9 @@ function Panel::SelectCurrentHoveredTool()
 {
 	if(mCurrentHoveredTool != Void)
 	{
-		mCurrentHoveredTool.SetIconNameVisibility(false);
+		var hoveredToolIcon = mCurrentHoveredTool.GetIconObj();
+		
+		hoveredToolIcon.SetIconNameVisibility(false);
 		
 //		mPanelName.SetPivotPoint(mPanelName.LocalToWorld([-mPanelName.GetWidthOfLine(0) / 2.0, 0, 0]));
 		mAnimator.CreateScalingTransition(mPanelName.GetObj(), mPanelName.GetScale(), [0, 1, 0], 0.2, false, 2);	
@@ -239,11 +248,13 @@ function Panel::SelectCurrentHoveredTool()
 			}
 		}
 		
-		mAnimator.CreateScalingTransition(mCurrentHoveredTool.GetObj(), mCurrentHoveredTool.GetScale(), [1, 1, 1], 0.2, false, 2);	
+		mCurrentHoveredTool.SetToolActive(true);
+		
+		mAnimator.CreateScalingTransition(hoveredToolIcon.GetObj(), hoveredToolIcon.GetScale(), [1, 1, 1], 0.2, false, 2);	
 		
 		
-		var endPos = [-GetWidth() / 2.0 + mCurrentHoveredTool.GetWidth(), GetHeight() / 2.0 - mCurrentHoveredTool.GetHeight(), 0.01 * SCALE_FACTOR];	
-		mAnimator.CreateTransition(mCurrentHoveredTool, mCurrentHoveredTool.GetPosition(), endPos, 0.3, false, 2);
+		var endPos = [-GetWidth() / 2.0 + hoveredToolIcon.GetWidth(), GetHeight() / 2.0 - hoveredToolIcon.GetHeight(), 0.01 * SCALE_FACTOR];	
+		mAnimator.CreateTransition(hoveredToolIcon, hoveredToolIcon.GetPosition(), endPos, 0.3, false, 2);
 		
 		mIsToolSelected = true;
 		
@@ -259,7 +270,7 @@ function Panel::DeselectCurrentTool()
 	{
 		mIsToolSelected = false;
 		
-		mAnimator.CreateScalingTransition(mPanelName.GetObj(), mPanelName.GetScale(), [1, 1, 1], 0.2, false, 2);
+		mAnimator.CreateScalingTransition(mPanelName.GetObj(), mPanelName.GetScale(), {mPanelName.GetScale(), [1, 1, 1]}, 0.2, false, 2);
 		mPanelName.Unhide();
 		
 		for(var i = 0; i < len(mTools); i++)
@@ -272,13 +283,17 @@ function Panel::DeselectCurrentTool()
 				
 				if(toolIcon != mSelectedTool)
 				{
-					mAnimator.CreateScalingTransition(toolIcon.GetObj(), toolIcon.GetScale(), [1, 1, 1], 0.2, false, 2);
+					mAnimator.CreateScalingTransition(toolIcon.GetObj(), toolIcon.GetScale(), {toolIcon.GetScale(), [1, 1, 1]}, 0.2, false, 2);
 					toolIcon.Unhide();
 				}	
 			}
 		}
 		
-		mAnimator.CreateTransition(mSelectedTool, mSelectedTool.GetPosition(), mSelectedTool.GetDefaultPosition(), 0.3, false, 2);
+		mSelectedTool.SetToolActive(false);
+		
+		var hoveredToolIcon = mSelectedTool.GetIconObj();
+		
+		mAnimator.CreateTransition(hoveredToolIcon, hoveredToolIcon.GetPosition(), hoveredToolIcon.GetDefaultPosition(), 0.3, false, 2);
 		
 		mSelectedTool = Void;
 		mCurrentHoveredTool = mSelectedTool;
@@ -354,6 +369,11 @@ function Panel::IsColliding(rayOrigin, rayEnd, contactPoint)
 function Panel::GetObj()
 {
 	return mPanel;
+}
+
+function Panel::AddChild(child, x, y, z)
+{
+	mPanel.AddChild(child, x, y, z);
 }
 
 //function Panel::SetActionAvailable(isActionAvailable)
