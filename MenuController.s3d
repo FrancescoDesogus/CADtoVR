@@ -146,22 +146,10 @@ function MenuController::UpdateLogic(dt, isVRon, actionController)
 	}
 	
 	if(mInputManager.TouchpadLeftSinglePressed(mViveController.GetIndex()) && mActionsListManager.IsUndoAvailable())
-	{
-		var lastToolUsed = mActionsListManager.GetLastActionTool();
-		
-		lastToolUsed.UndoLastAction(mActionsListManager.GetLastActionContent());
-		
-		mActionsListManager.UndoDone();
-	}
+		mActionsListManager.UndoLastAction();
 	
 	if(mInputManager.TouchpadRightSinglePressed(mViveController.GetIndex()) && mActionsListManager.IsRedoAvailable())
-	{
-		var lastToolUsed = mActionsListManager.GetNextActionTool();
-		
-		lastToolUsed.RedoLastAction(mActionsListManager.GetNextActionContent());
-		
-		mActionsListManager.RedoDone();
-	}
+		mActionsListManager.RedoLastAction();
 }
 
 function MenuController::Draw()
