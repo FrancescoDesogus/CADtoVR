@@ -38,6 +38,10 @@ class InputManager
 	GripSinglePressed(controllerIndex);
 	GetController(controllerIndex);
 	HasPressedMenuButton(controllerIndex);
+	TouchpadLeftSinglePressed(controllerIndex);
+	TouchpadRightSinglePressed(controllerIndex);
+	TouchpadUpSinglePressed(controllerIndex);
+	TouchpadDownSinglePressed(controllerIndex);
 	VibrateController(controllerIndex, microseconds);
 	GetPlayAreaSize();
 };
@@ -135,6 +139,26 @@ function InputManager::GripSinglePressed(controllerIndex)
 function InputManager::HasPressedMenuButton(controllerIndex)
 {
 	return mManager.HasPressedMenuButton(controllerIndex);
+}
+
+function InputManager::TouchpadLeftSinglePressed(controllerIndex)
+{
+	return mManager.TouchpadLeftSinglePressed(controllerIndex);
+}
+
+function InputManager::TouchpadRightSinglePressed(controllerIndex)
+{
+	return mManager.TouchpadRightSinglePressed(controllerIndex);
+}
+
+function InputManager::TouchpadUpSinglePressed(controllerIndex)
+{
+	return mManager.TouchpadUpSinglePressed(controllerIndex);
+}
+
+function InputManager::TouchpadDownSinglePressed(controllerIndex)
+{
+	return mManager.TouchpadDownSinglePressed(controllerIndex);
 }
 
 function InputManager::GetController(controllerIndex)

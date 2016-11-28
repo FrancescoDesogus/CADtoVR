@@ -39,13 +39,11 @@ class Panel
 	
 	var mSelectedTool;
 	
-	var mActionsArray;
-	var mActionsArrayIndex;
-	var mActionsArraySize;
+	var mActionsListManager;
 	
 	// This method works as the constructor for the class: the classes that will inherit from this class will need to call
 	// this in their constructor as the first call
-	Init(panelName, actionController, animator, actionsArray, actionsArrayIndex, actionsArraySize);
+	Init(panelName, actionController, animator, actionsListManager);
 	
 	// Public functions (protected)
 	Draw();
@@ -83,18 +81,12 @@ class Panel
  * This method works as the constructor. It takes as input the string corresponding to the name of the panel and a reference to an
  * Animator object used for animations by the ToolsMenu class
  */
-function Panel::Init(panelName, actionController, animator, actionsArray, actionsArrayIndex, actionsArraySize)
+function Panel::Init(panelName, actionController, animator, actionsListManager)
 {
 	mActionController = actionController;
 	mAnimator = animator;
 	
-	mActionsArray = actionsArray;
-	mActionsArrayIndex = actionsArrayIndex;
-	mActionsArraySize = actionsArraySize;
-	
-	outputln(mActionsArraySize);
-	
-	mActionsArraySize++;
+	mActionsListManager = actionsListManager;
 	
 	mCurrentHoveredTool = Void;
 	mCurrentSelectedTool = Void;

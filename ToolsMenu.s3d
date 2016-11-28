@@ -1,3 +1,4 @@
+#include "ActionsListManager.s3d"
 #include "ToolIcon.s3d"
 #include "Tool.s3d"
 #include "Panel.s3d"
@@ -28,11 +29,7 @@ class ToolsMenu
 	var mPreviousActivePanelIndex;
 	var mIsToolSelected;
 	
-	
-	var mActionsArray;
-	var mActionsArrayIndex;
-	var mActionsArraySize;
-	
+	var mActionsListManager;
 	
 	// Public functions
 	Draw();
@@ -65,14 +62,12 @@ class ToolsMenu
 };
 
 
-function ToolsMenu::ToolsMenu(menuController, actionController)
+function ToolsMenu::ToolsMenu(menuController, actionController, actionsListManager)
 {
 	mMenuController = menuController;
 	mActionController = actionController;
 	
-	mActionsArray = {};
-	mActionsArrayIndex = 0;
-	mActionsArraySize = 3;
+	mActionsListManager = actionsListManager;
 	
 	mIntersectionPoint = [0, 0, 0];
 	
@@ -86,17 +81,15 @@ function ToolsMenu::ToolsMenu(menuController, actionController)
 	mPanelsPositionOffset = {};
 	mPanelsRotationQuaternion = {};
 	
-	var selectionPanelObj = SelectionPanel(actionController, mAnimator, mActionsArray, &mActionsArrayIndex, &mActionsArraySize);
+	var selectionPanelObj = SelectionPanel(actionController, mAnimator, mActionsListManager);
 	var positionOffset = [0, mMenuController.GetHeight() / 2.0, selectionPanelObj.GetHeight() / 3.0];
 	var quaternion = EulerToQuaternion([-90, 0, 0]);
-	
-	outputln(mActionsArraySize);
 	
 	aadd(mPanels, selectionPanelObj);
 	aadd(mPanelsPositionOffset, positionOffset);
 	aadd(mPanelsRotationQuaternion, quaternion);
 	
-	selectionPanelObj = MeasuringPanel(actionController, mAnimator, mActionsArray, &mActionsArrayIndex, &mActionsArraySize);
+	selectionPanelObj = MeasuringPanel(actionController, mAnimator, mActionsListManager);
 	positionOffset = [-selectionPanelObj.GetWidth() / 2.0, -selectionPanelObj.GetHeight() / 3.0, mMenuController.GetDepth() / 3.0];
 	quaternion = EulerToQuaternion([0, -90, 90]);
 	
@@ -163,6 +156,7 @@ function ToolsMenu::UpdateLogic(dt, actionController)
 		mCurrentActivePanelIndex = -1;
 		mIntersectionPoint = Void;
 	}
+	
 		
 	mAnimator.UpdateTransitions(dt);
 }

@@ -20,6 +20,8 @@ class Tool
 	
 	var mAnimator;
 	
+	var mActionsListManager;
+	
 	
 	// Public functions
 	Draw();
@@ -50,7 +52,7 @@ class Tool
 	SetToolActive(active);
 //	UpdateLogic(dt, viveController);
 
-	Init(textureString, name, panel, actionController, animator);
+	Init(textureString, name, panel, actionController, animator, actionsListManager);
 };
 
 
@@ -70,12 +72,13 @@ function Tool::Tool(textureString, name, panel, actionController, animator)
 //	mIsToolActive = false;
 }
 
-function Tool::Init(textureString, name, panel, actionController, animator)
+function Tool::Init(textureString, name, panel, actionController, animator, actionsListManager)
 {
 	mToolNameString = name;
 	mPanel = panel;
 	mActionController = actionController;
 	mAnimator = animator;
+	mActionsListManager = actionsListManager;
 	
 	
 	mToolNameText = Text(name, 0.3, [1, 1, 1]);

@@ -9,26 +9,30 @@ class ActionsListManager
 	var mActionsArraySize;
 
 	// Public functions
-	AddAction(panelID, toolID, content);
-	GetLastActionPanelID();
-	GetLastActionTooldID();
+	AddAction(tool, content);
+	GetLastActionTool();
+	GetNextActionTool();
+	GetLastActionContent();
+	GetNextActionContent();
 	IsUndoAvailable();
 	IsRedoAvailable();
+	UndoDone();
+	RedoDone();
 };
 
 
-function ActionsListManager::ActionsListManager(string, scale, color)
+function ActionsListManager::ActionsListManager()
 {
 	mActionsArray = {};
 	mActionsArrayIndex = 0;
 	mActionsArraySize = 0;
 }
 
-function ActionsListManager::AddAction(panelID, toolID, content)
+function ActionsListManager::AddAction(tool, content)
 {
-	var newAction = {panelID, toolID, content};
+	var newAction = {tool, content};
 	
-	if(mActionsArray[mActionsArrayIndex] == Void)
+	if(mActionsArrayIndex >= len(mActionsArray))
 		aadd(mActionsArray, newAction);
 	else
 		mActionsArray[mActionsArrayIndex] = newAction;
@@ -39,19 +43,44 @@ function ActionsListManager::AddAction(panelID, toolID, content)
 	mActionsArraySize = mActionsArrayIndex;
 }
 
-function ActionsListManager::GetLastActionPanelID()
+function ActionsListManager::GetLastActionTool()
 {
 	var lastAction = mActionsArray[mActionsArrayIndex - 1];
 	
 	return lastAction[0];
 }
 
-function ActionsListManager::GetLastActionTooldID()
+function ActionsListManager::GetNextActionTool()
+{
+	var lastAction = mActionsArray[mActionsArrayIndex];
+	
+	return lastAction[0];
+}
+
+function ActionsListManager::GetLastActionContent()
 {
 	var lastAction = mActionsArray[mActionsArrayIndex - 1];
 	
 	return lastAction[1];
 }
+
+function ActionsListManager::GetNextActionContent()
+{
+	var lastAction = mActionsArray[mActionsArrayIndex ];
+	
+	return lastAction[1];
+}
+
+function ActionsListManager::UndoDone()
+{	
+	mActionsArrayIndex--;
+}
+
+function ActionsListManager::RedoDone()
+{	
+	mActionsArrayIndex++;
+}
+
 
 function ActionsListManager::IsUndoAvailable()
 {	

@@ -11,10 +11,10 @@ class SelectionPanel : Panel
 };
 
 
-function SelectionPanel::SelectionPanel(actionController, animator, actionsArray, actionsArrayIndex, actionsArraySize)
+function SelectionPanel::SelectionPanel(actionController, animator, actionsListManager)
 {
 	// Calling the method that works as constructor for the parent class
-	Panel::this.Init("Selection Tools", actionController, animator, actionsArray, actionsArrayIndex, actionsArraySize);
+	Panel::this.Init("Selection Tools", actionController, animator, actionsListManager);
 	
 	// Creating the icons
 //	var selToolObj = Tool("Textures/icons/select.png", "Info tool", Panel::this, mAnimator);	
@@ -23,7 +23,7 @@ function SelectionPanel::SelectionPanel(actionController, animator, actionsArray
 //	var selToolObj4 = Tool("Textures/icons/select.png", "Info tool", Panel::this, mAnimator);
 //	var selToolObj5 = Tool("Textures/icons/select.png", "Info tool", Panel::this, mAnimator);
 //	var selToolObj6 = Tool("Textures/icons/select.png", "Info tool", Panel::this, mAnimator);
-	var selToolObj6 = NotesTool(Panel::this, actionController, mAnimator);
+	var selToolObj6 = NotesTool(Panel::this, actionController, mAnimator, mActionsListManager);
 
 	// Adding the set of icons as separate rows
 //	aadd(mTools, {selToolObj, selToolObj2, selToolObj3});

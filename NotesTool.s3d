@@ -12,13 +12,15 @@ class NotesTool : Tool
 	UpdateLogic(dt);
 	
 	Draw();
+	UndoLastAction(content);
+	RedoLastAction(content);
 };
 
 
-function NotesTool::NotesTool(panel, actionController, animator)
+function NotesTool::NotesTool(panel, actionController, animator, actionsListManager)
 {
 	// Calling the method that works as constructor for the parent class
-	Tool::this.Init("Textures/icons/notes.png", "Annotations", panel, actionController, animator);
+	Tool::this.Init("Textures/icons/notes.png", "Annotations", panel, actionController, animator, actionsListManager);
 	
 //	mPostItObj = CreateGlassPlane(0.5 * SCALE_FACTOR, 0.5 * SCALE_FACTOR, 0.01 * SCALE_FACTOR, [1.0, 1.0, 1.0], 0.5);
 	
@@ -48,17 +50,15 @@ function NotesTool::Draw()
 	// Calling the base class method
 	Tool::this.Draw(); 
 
-	if(IsToolActive())
-	{
-		mPostItShader.Start();
-			mPostItShader.SetParameter("tex", CVmTexture("Textures/postit.png"));
-			
+	mPostItShader.Start();
+		mPostItShader.SetParameter("tex", CVmTexture("Textures/postit.png"));
+		
+		if(IsToolActive())
 			mTemporaryNote.Draw();
-			
-			foreach(var note in mNotesList)
-				note.Draw();
-		mPostItShader.Stop();
-	}
+		
+		foreach(var note in mNotesList)
+			note.Draw();
+	mPostItShader.Stop();
 }
 
 /*
@@ -78,7 +78,31 @@ function NotesTool::UpdateLogic(dt)
 			mTemporaryNote = CVmObj(mNoteMesh);
 			
 			mAnimator.CreateScalingTransition(mTemporaryNote, [0, 0, 0], [1.0, 1.0, 1.0], 0.2, false, 2);	
+			
+			var newActionContent = {mActionController.GetControllerTipCoordinates(), mActionController.GetRotationMatrix()};
+			
+			mActionsListManager.AddAction(NotesTool::this, newActionContent);
+			
+			print("added", mActionController.GetControllerTipCoordinates());
 		}
 	}
 }
 
+
+function NotesTool::UndoLastAction(content)
+{
+	print("undo", mNotesList[len(mNotesList) - 1].GetPosition());
+	adel(mNotesList, len(mNotesList) - 1);
+}
+
+function NotesTool::RedoLastAction(content)
+{
+	var newNote = CVmObj(mNoteMesh);
+	
+	newNote.SetPosition(content[0]);
+	newNote.SetRotationMatrix(content[1]);
+	
+	print("redo", content[0]);
+	
+	aadd(mNotesList, newNote);
+}

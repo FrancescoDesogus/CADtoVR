@@ -13,6 +13,8 @@ class MenuController
 	
 	var mToolPanel;
 	
+	var mActionsListManager;
+	
 	
 	// Public functions
 	Draw();
@@ -45,10 +47,12 @@ function MenuController::MenuController(viveController, actionController, inputM
 	mControllerIndex = mViveController.GetIndex();
 	mInputManager = inputManager;
 	
+	mActionsListManager = ActionsListManager();
+	
 //	mToolPanel = CreateGlassPlane(1.0 * SCALE_FACTOR, 1.0 * SCALE_FACTOR, 0.02 * SCALE_FACTOR, [1.0, 1.0, 1.0], 0.5);
 //	mToolPanel.Rotate(90, 1, 0, 0);
 
-	mToolPanel = ToolsMenu(mViveController, actionController);
+	mToolPanel = ToolsMenu(mViveController, actionController, mActionsListManager);
 	
 //	mViveController.AddChild(mToolPanel, 0.0, mViveController.GetHeight(), 0.0);
 }
@@ -139,6 +143,24 @@ function MenuController::UpdateLogic(dt, isVRon, actionController)
 	if(mInputManager.GripSinglePressed(actionController.GetIndex()))
 	{
 		mToolPanel.DeSelectCurrentTool();
+	}
+	
+	if(mInputManager.TouchpadLeftSinglePressed(mViveController.GetIndex()) && mActionsListManager.IsUndoAvailable())
+	{
+		var lastToolUsed = mActionsListManager.GetLastActionTool();
+		
+		lastToolUsed.UndoLastAction(mActionsListManager.GetLastActionContent());
+		
+		mActionsListManager.UndoDone();
+	}
+	
+	if(mInputManager.TouchpadRightSinglePressed(mViveController.GetIndex()) && mActionsListManager.IsRedoAvailable())
+	{
+		var lastToolUsed = mActionsListManager.GetNextActionTool();
+		
+		lastToolUsed.RedoLastAction(mActionsListManager.GetNextActionContent());
+		
+		mActionsListManager.RedoDone();
 	}
 }
 

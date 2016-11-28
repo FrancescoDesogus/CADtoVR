@@ -45,6 +45,10 @@ class KeyboardManager
 	
 	var mPrimaryButtonSinglePressed;
 	var mGripSinglePressed;
+	var mTouchpadLeftSinglePressed;
+	var mTouchpadRightSinglePressed;
+	var mTouchpadUpSinglePressed;
+	var mTouchpadDownSinglePressed;
 		
 	// Private functions
 	UpdateCameraPosition();
@@ -59,6 +63,10 @@ class KeyboardManager
 	IsGripPressed();
 	GripSinglePressed();
 	HasPressedMenuButton();
+	TouchpadLeftSinglePressed();
+	TouchpadRightSinglePressed();
+	TouchpadUpSinglePressed();
+	TouchpadDownSinglePressed();
 	GetController(controllerIndex);
 };
 
@@ -88,6 +96,10 @@ function KeyboardManager::KeyboardManager()
 	
 	mPrimaryButtonSinglePressed = false;
 	mGripSinglePressed = false;
+	mTouchpadLeftSinglePressed = false;
+	mTouchpadRightSinglePressed = false;
+	mTouchpadUpSinglePressed = false;
+	mTouchpadDownSinglePressed = false;
 }
 
 
@@ -334,6 +346,70 @@ function KeyboardManager::HasPressedMenuButton()
 	else
 		mIsPressingMenuButton = false;
 		
+	return false;
+}
+
+function KeyboardManager::TouchpadLeftSinglePressed()
+{
+	if(KeyPressed("Z"))
+	{
+		if(!mTouchpadLeftSinglePressed)
+		{
+			mTouchpadLeftSinglePressed = true;
+			return true;
+		}
+	}
+	else
+		mTouchpadLeftSinglePressed = false;
+			
+	return false;
+}
+
+function KeyboardManager::TouchpadRightSinglePressed()
+{
+	if(KeyPressed("X"))
+	{
+		if(!mTouchpadRightSinglePressed)
+		{
+			mTouchpadRightSinglePressed = true;
+			return true;
+		}
+	}
+	else
+		mTouchpadRightSinglePressed = false;
+			
+	return false;
+}
+
+function KeyboardManager::TouchpadUpSinglePressed()
+{
+	if(KeyPressed(VK_UP))
+	{
+		if(!mTouchpadUpSinglePressed)
+		{
+			mTouchpadUpSinglePressed = true;
+			return true;
+		}
+	}
+	else
+		mTouchpadUpSinglePressed = false;
+			
+	return false;
+}
+
+function KeyboardManager::TouchpadDownSinglePressed()
+{
+	if(KeyPressed(VK_DOWN))
+	{
+		if(!mTouchpadDownSinglePressed)
+		{
+			mTouchpadDownSinglePressed = true;
+			return true;
+		}
+	}
+	else
+		mTouchpadDownSinglePressed = false;
+			
 	return false;
 }
 
