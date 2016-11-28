@@ -42,6 +42,7 @@ class ActionController
 	
 	UpdateLogic(dt, debugMode);
 	SetDrawRay(drawRay, rayOrigin, rayEnd);
+	PrimaryButtonSinglePressed();
 };
 
 
@@ -150,6 +151,11 @@ function ActionController::Draw()
 			glEnd();
 		mDashedLineShader.Stop();
 	}
+}
+
+function ActionController::PrimaryButtonSinglePressed()
+{
+	return mInputManager.PrimaryButtonSinglePressed(mViveController.GetIndex());
 }
 
 function ActionController::GetObj()

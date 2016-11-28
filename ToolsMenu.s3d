@@ -29,6 +29,11 @@ class ToolsMenu
 	var mIsToolSelected;
 	
 	
+	var mActionsArray;
+	var mActionsArrayIndex;
+	var mActionsArraySize;
+	
+	
 	// Public functions
 	Draw();
 	GetObj();
@@ -54,6 +59,9 @@ class ToolsMenu
 	IsIntersectionFound();
 	SelectCurrentHoveredTool();
 	DeSelectCurrentTool();
+	
+	UndoLastAction();
+	RedoLastAction();
 };
 
 
@@ -61,6 +69,10 @@ function ToolsMenu::ToolsMenu(menuController, actionController)
 {
 	mMenuController = menuController;
 	mActionController = actionController;
+	
+	mActionsArray = {};
+	mActionsArrayIndex = 0;
+	mActionsArraySize = 3;
 	
 	mIntersectionPoint = [0, 0, 0];
 	
@@ -74,15 +86,17 @@ function ToolsMenu::ToolsMenu(menuController, actionController)
 	mPanelsPositionOffset = {};
 	mPanelsRotationQuaternion = {};
 	
-	var selectionPanelObj = SelectionPanel(actionController, mAnimator);
+	var selectionPanelObj = SelectionPanel(actionController, mAnimator, mActionsArray, &mActionsArrayIndex, &mActionsArraySize);
 	var positionOffset = [0, mMenuController.GetHeight() / 2.0, selectionPanelObj.GetHeight() / 3.0];
 	var quaternion = EulerToQuaternion([-90, 0, 0]);
+	
+	outputln(mActionsArraySize);
 	
 	aadd(mPanels, selectionPanelObj);
 	aadd(mPanelsPositionOffset, positionOffset);
 	aadd(mPanelsRotationQuaternion, quaternion);
 	
-	selectionPanelObj = MeasuringPanel(actionController, mAnimator);
+	selectionPanelObj = MeasuringPanel(actionController, mAnimator, mActionsArray, &mActionsArrayIndex, &mActionsArraySize);
 	positionOffset = [-selectionPanelObj.GetWidth() / 2.0, -selectionPanelObj.GetHeight() / 3.0, mMenuController.GetDepth() / 3.0];
 	quaternion = EulerToQuaternion([0, -90, 90]);
 	

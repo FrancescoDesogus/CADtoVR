@@ -6,9 +6,9 @@ class MeasuringPanel : Panel
 };
 
 
-function MeasuringPanel::MeasuringPanel(actionController, animator)
+function MeasuringPanel::MeasuringPanel(actionController, animator, actionsArray, actionsArrayIndex, actionsArraySize)
 {
-	Panel::this.Init("Measuring Tools", actionController, animator); 
+	Panel::this.Init("Measuring Tools", actionController, animator, actionsArray, actionsArrayIndex, actionsArraySize); 
 	
 //	var selToolObj = Tool("Textures/icons/distance.png", "Distance tool", Panel::this, mAnimator);	
 //	var selToolObj2 = Tool("Textures/icons/distance.png", "Distance tool", Panel::this, mAnimator);

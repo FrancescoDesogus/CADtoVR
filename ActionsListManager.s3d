@@ -1,0 +1,65 @@
+
+/*
+ * This class is basically a CVmActionsListManager but a little better, since it allows to put string with "\n" and automatically center the position of the strings
+ */
+class ActionsListManager 
+{
+	var mActionsArray;
+	var mActionsArrayIndex;
+	var mActionsArraySize;
+
+	// Public functions
+	AddAction(panelID, toolID, content);
+	GetLastActionPanelID();
+	GetLastActionTooldID();
+	IsUndoAvailable();
+	IsRedoAvailable();
+};
+
+
+function ActionsListManager::ActionsListManager(string, scale, color)
+{
+	mActionsArray = {};
+	mActionsArrayIndex = 0;
+	mActionsArraySize = 0;
+}
+
+function ActionsListManager::AddAction(panelID, toolID, content)
+{
+	var newAction = {panelID, toolID, content};
+	
+	if(mActionsArray[mActionsArrayIndex] == Void)
+		aadd(mActionsArray, newAction);
+	else
+		mActionsArray[mActionsArrayIndex] = newAction;
+		
+	mActionsArrayIndex++;
+	
+	// Quando si esegue una nuova azione, la grandezza dell'array fittizia è pari al valore dell'indice
+	mActionsArraySize = mActionsArrayIndex;
+}
+
+function ActionsListManager::GetLastActionPanelID()
+{
+	var lastAction = mActionsArray[mActionsArrayIndex - 1];
+	
+	return lastAction[0];
+}
+
+function ActionsListManager::GetLastActionTooldID()
+{
+	var lastAction = mActionsArray[mActionsArrayIndex - 1];
+	
+	return lastAction[1];
+}
+
+function ActionsListManager::IsUndoAvailable()
+{	
+	return mActionsArrayIndex > 0;
+}
+
+function ActionsListManager::IsRedoAvailable()
+{	
+	return mActionsArrayIndex < mActionsArraySize;
+}
+

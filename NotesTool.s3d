@@ -1,7 +1,10 @@
 
 class NotesTool : Tool
 {
-	var mPostItObj;
+	var mTemporaryNote;
+	
+	var mNotesList;
+	var mNoteMesh;
 	
 	var mPostItShader;
 	
@@ -22,7 +25,7 @@ function NotesTool::NotesTool(panel, actionController, animator)
 	var postItHalfWidth = 0.5 * SCALE_FACTOR / 2.0;
 	var postItHalfHeight = 0.5 * SCALE_FACTOR / 2.0;
 	
-	var postItMesh = CVmNewMesh(VRP_PLANE, 1, [-postItHalfWidth, -postItHalfHeight, 0], [postItHalfWidth, postItHalfHeight, 0], 2, 2);
+	mNoteMesh = CVmNewMesh(VRP_PLANE, 1, [-postItHalfWidth, -postItHalfHeight, 0], [postItHalfWidth, postItHalfHeight, 0], 2, 2);
 	
 //	var postItMaterial = CVmMaterial();
 //	postItMaterial.Ambient = [0, 0, 0];
@@ -32,9 +35,11 @@ function NotesTool::NotesTool(panel, actionController, animator)
 //	
 //	postItMesh.SetMaterial(postItMaterial);
 	
-	mPostItObj = CVmObj(postItMesh);
+	mTemporaryNote = CVmObj(mNoteMesh);
 	
 	mPostItShader = CVmShaderProgram("Shaders/postItShader.glsl");
+	
+	mNotesList = {};
 }
 
 
@@ -48,7 +53,10 @@ function NotesTool::Draw()
 		mPostItShader.Start();
 			mPostItShader.SetParameter("tex", CVmTexture("Textures/postit.png"));
 			
-			mPostItObj.Draw();
+			mTemporaryNote.Draw();
+			
+			foreach(var note in mNotesList)
+				note.Draw();
 		mPostItShader.Stop();
 	}
 }
@@ -58,13 +66,19 @@ function NotesTool::Draw()
  */
 function NotesTool::UpdateLogic(dt)
 {
-	// Calling the base class method; it updates the position of the icons
-//	Panel::this.UpdateLogic(isVRon); 
-
 	if(IsToolActive())
 	{
-		mPostItObj.SetPosition(mActionController.GetControllerTipCoordinates());
-		mPostItObj.SetRotationMatrix(mActionController.GetRotationMatrix());
+		mTemporaryNote.SetPosition(mActionController.GetControllerTipCoordinates());
+		mTemporaryNote.SetRotationMatrix(mActionController.GetRotationMatrix());
+		
+		if(mActionController.PrimaryButtonSinglePressed())
+		{
+			aadd(mNotesList, mTemporaryNote);
+			
+			mTemporaryNote = CVmObj(mNoteMesh);
+			
+			mAnimator.CreateScalingTransition(mTemporaryNote, [0, 0, 0], [1.0, 1.0, 1.0], 0.2, false, 2);	
+		}
 	}
 }
 

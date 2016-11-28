@@ -11,10 +11,10 @@ class SelectionPanel : Panel
 };
 
 
-function SelectionPanel::SelectionPanel(actionController, animator)
+function SelectionPanel::SelectionPanel(actionController, animator, actionsArray, actionsArrayIndex, actionsArraySize)
 {
 	// Calling the method that works as constructor for the parent class
-	Panel::this.Init("Selection Tools", actionController, animator);
+	Panel::this.Init("Selection Tools", actionController, animator, actionsArray, actionsArrayIndex, actionsArraySize);
 	
 	// Creating the icons
 //	var selToolObj = Tool("Textures/icons/select.png", "Info tool", Panel::this, mAnimator);	
