@@ -71,6 +71,7 @@ class Panel
 	SelectCurrentHoveredTool();
 	DeSelectCurrentTool();
 	GenerateIconsPositions();
+	SetActionAvailable(actionAvailable);
 	
 	// Public functions that need to be overwritten; the classes that will inherit from this class will still need to call
 	// this method in their override function as the first call, to update general things of the panel
@@ -212,6 +213,7 @@ function Panel::FindIntersection(rayOrigin, rayEnd)
 	}
 	else
 	{
+		mCurrentHoveredTool = Void;
 //		if(mPanelName.IsVisible() && mPanelName.GetScale().x <= 0)
 //		{
 //			mPanelName.Hide();
@@ -226,6 +228,8 @@ function Panel::FindIntersection(rayOrigin, rayEnd)
 //			}
 //		}
 	}
+	
+	
 }
 
 function Panel::SelectCurrentHoveredTool()
@@ -351,6 +355,14 @@ function Panel::GenerateIconsPositions()
 			
 			mPanel.AddChild(toolIcon.GetObj(), x, y, 0.01 * SCALE_FACTOR);
 		}
+	}
+}
+
+function Panel::SetActionAvailable(actionAvailable)
+{
+	if(mIsToolSelected)
+	{
+		mSelectedTool.SetActionAvailable(actionAvailable);
 	}
 }
 

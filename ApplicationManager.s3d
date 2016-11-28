@@ -422,7 +422,8 @@ function ApplicationManager::UpdateLogic(dt)
 	if(firstTimeUsingController || wasUsingController1 || wasUsingController2)
 	{				
 		if(firstTimeUsingController)
-			mControllerBeingUsedIndex = usingController1 ? 1 : 2;
+			mControllerBeingUsedIndex = 2;
+//			mControllerBeingUsedIndex = usingController1 ? 1 : 2;
 		
 		// I get the camera's position- minus the offset so we get the actual position of the player in the world
 		// NOTE: if the Vive is active, this shouldn't be the camera's, but the controller's position. Need to modify the code

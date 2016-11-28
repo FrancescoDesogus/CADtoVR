@@ -164,11 +164,17 @@ function ToolsMenu::UpdateLogic(dt, actionController)
 		
 		mPanels[panelIndex].FindIntersection(rayOrigin, rayEnd);
 		mIntersectionPoint = contactPoint;
+		
+		if(mPreviousActivePanelIndex != -1)
+			mPanels[mPreviousActivePanelIndex].SetActionAvailable(false);
 	}
 	else
 	{
 		mCurrentActivePanelIndex = -1;
 		mIntersectionPoint = Void;
+		
+		if(mPreviousActivePanelIndex != -1)
+			mPanels[mPreviousActivePanelIndex].SetActionAvailable(true);
 	}
 	
 		
@@ -185,7 +191,7 @@ function ToolsMenu::IsIntersectionFound()
 
 function ToolsMenu::SelectCurrentHoveredTool()
 {
-	if(mPreviousActivePanelIndex != -1)
+	if(mPreviousActivePanelIndex != -1 && mPreviousActivePanelIndex != mCurrentActivePanelIndex)
 		mPanels[mPreviousActivePanelIndex].DeSelectCurrentTool();
 
 	mPreviousActivePanelIndex = mCurrentActivePanelIndex;
@@ -196,17 +202,17 @@ function ToolsMenu::SelectCurrentHoveredTool()
 function ToolsMenu::DeSelectCurrentTool()
 {
 	if(mIsToolSelected)
-		mIsToolSelected = mPanels[mCurrentActivePanelIndex].DeSelectCurrentTool();
+		mIsToolSelected = mPanels[mPreviousActivePanelIndex].DeSelectCurrentTool();
 		
 	mPreviousActivePanelIndex = -1;
 }
 
 function ToolsMenu::RotatePanels(rotateLeft)
 {
-	if(rotateLeft)
-		mAnimator.CreateRotatingTransition(mToolsMenu.GetObj(), 0, -90, [0, 1, 0], 1.0, false, false);
-	else
-		mAnimator.CreateRotatingTransition(mToolsMenu.GetObj(), 0, 90, [0, 1, 0], 1.0, false, false);
+//	if(rotateLeft)
+//		mAnimator.CreateRotatingTransition(mToolsMenu.GetObj(), 0, -90, [0, 1, 0], 1.0, false, false);
+//	else
+//		mAnimator.CreateRotatingTransition(mToolsMenu.GetObj(), 0, 90, [0, 1, 0], 1.0, false, false);
 }
 
 function ToolsMenu::Draw()

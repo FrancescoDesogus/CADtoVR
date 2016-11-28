@@ -185,6 +185,11 @@ function Scene::UpdateLogic(dt)
 	
 	mActionController.UpdateLogic(dt, mIsVRon);
 	mMenuController.UpdateLogic(dt, mIsVRon, mActionController);
+	
+	// To avoid the fact that the icons in the menu panel are changed by lights I put the lights where the player is ALWAYS; temporary fix
+	mLight0Position = cameraPosition;
+	mLight1Position = cameraPosition;
+	mLight2Position = cameraPosition;
 		
 	// I update the methods of the managers
 	mAnimator.UpdateTransitions(dt);

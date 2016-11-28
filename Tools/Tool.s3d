@@ -22,6 +22,8 @@ class Tool
 	
 	var mActionsListManager;
 	
+	var mActionAvailable;
+	
 	
 	// Public functions
 	Draw();
@@ -51,6 +53,7 @@ class Tool
 	IsToolActive();
 	SetToolActive(active);
 //	UpdateLogic(dt, viveController);
+	SetActionAvailable(actionAvailable);
 
 	Init(textureString, name, panel, actionController, animator, actionsListManager);
 };
@@ -88,11 +91,17 @@ function Tool::Init(textureString, name, panel, actionController, animator, acti
 	mToolIcon = ToolIcon(textureString, name);
 	
 	mIsToolActive = false;
+	mActionAvailable = false;
 }
 
 function Tool::IsToolActive()
 {
 	return mIsToolActive;
+}
+
+function Tool::SetActionAvailable(actionAvailable)
+{
+	mActionAvailable = actionAvailable;
 }
 
 function Tool::SetToolActive(active)

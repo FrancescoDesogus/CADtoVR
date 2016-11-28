@@ -90,7 +90,7 @@ function NotesTool::UpdateLogic(dt)
 		mPreviewNote.SetRotationMatrix(mActionController.GetRotationMatrix());
 		
 		// If the player presses the trigger on the action controller the note is put in the world
-		if(mActionController.PrimaryButtonSinglePressed())
+		if(mActionAvailable && mActionController.PrimaryButtonSinglePressed())
 		{
 			// Adding the note to the list of persistent notes
 			aadd(mNotesList, mPreviewNote);
