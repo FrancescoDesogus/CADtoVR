@@ -1,0 +1,148 @@
+
+/*
+ * The notes tool extends the Tool class
+ */
+class NotesTool : Tool
+{
+	// Mesh of a note
+	var mNoteMesh;
+	
+	// This CVmObject represent the "preview" note that is put on the tip of the controller
+	var mPreviewNote;
+	
+	// List of currently active notes
+	var mNotesList;
+	
+	// Shader to render the notes
+	var mNotesShader;
+	
+	
+	// Public functions
+	UpdateLogic(dt);
+	UndoLastAction(content);
+	RedoLastAction(content);
+	
+	// Public inherited functions
+	Draw();
+};
+
+
+function NotesTool::NotesTool(panel, actionController, animator, actionsListManager)
+{
+	// Calling the method that works as constructor for the parent class
+	Tool::this.Init("Textures/icons/notes.png", "Annotations", panel, actionController, animator, actionsListManager);
+	
+	// Sizes of the note mesh
+	var noteHalfWidth = 0.5 * SCALE_FACTOR / 2.0;
+	var noteHalfHeight = 0.5 * SCALE_FACTOR / 2.0;
+	
+	mNoteMesh = CVmNewMesh(VRP_PLANE, 1, [-noteHalfWidth, -noteHalfHeight, 0], [noteHalfWidth, noteHalfHeight, 0], 2, 2);
+	
+//	var postItMaterial = CVmMaterial();
+//	postItMaterial.Ambient = [0, 0, 0];
+//	postItMaterial.Shininess = 0.05;
+//	postItMaterial.Specular = [0,0,0];
+//	postItMaterial.SetTexture(CVmTexture("Textures/postit.png"));
+//	
+//	postItMesh.SetMaterial(postItMaterial);
+	
+	mPreviewNote = CVmObj(mNoteMesh);
+	
+	mNotesShader = CVmShaderProgram("Shaders/postItShader.glsl");
+	
+	mNotesList = {};
+}
+
+
+/*
+ * This method draws the preview note if the tool is selected and draws any note put in the world
+ */
+function NotesTool::Draw()
+{
+	// Calling the base class method
+	Tool::this.Draw(); 
+
+	// Activating shader and passing the reference to its texture
+	mNotesShader.Start();
+		mNotesShader.SetParameter("tex", CVmTexture("Textures/postit.png"));
+		
+		// If the tool is selected I draw the preview note
+		if(IsToolActive())
+			mPreviewNote.Draw();
+		
+		// I draw each active note in any case
+		foreach(var note in mNotesList)
+			note.Draw();
+			
+	mNotesShader.Stop();
+}
+
+
+/*
+ * This method updates the logic behind the tool, but only if it's active
+ */
+function NotesTool::UpdateLogic(dt)
+{
+	if(IsToolActive())
+	{
+		// I update the position and orientation of the preview node so that it "follows" the controller
+		mPreviewNote.SetPosition(mActionController.GetControllerTipCoordinates());
+		mPreviewNote.SetRotationMatrix(mActionController.GetRotationMatrix());
+		
+		// If the player presses the trigger on the action controller the note is put in the world
+		if(mActionController.PrimaryButtonSinglePressed())
+		{
+			// Adding the note to the list of persistent notes
+			aadd(mNotesList, mPreviewNote);
+			
+			// Creating a new preview note
+			mPreviewNote = CVmObj(mNoteMesh);
+			
+			// Creating a little animation for the new note
+			mAnimator.CreateScalingTransition(mPreviewNote, [0, 0, 0], [1.0, 1.0, 1.0], 0.2, false, 2);	
+			
+			// Now, this is the part needed for the undo/redo mechanism. I need to save the relevant things of the note
+			// so that in case of undo they can be used; in this case it's only the position and orientation of the note,
+			// but in the future there will probably be also the color, and maybe other stuff too
+			var newActionContent = {mActionController.GetControllerTipCoordinates(), mActionController.GetRotationMatrix()};
+			
+			// I say to the undo/redo manager that there was an action, and I pass a reference to the instance 
+			// of this tool and I pass the content the will be useful for undo/redo
+			mActionsListManager.AddAction(NotesTool::this, newActionContent);
+		}
+	}
+}
+
+
+/*
+ * This method undos the last action of this tool
+ */
+function NotesTool::UndoLastAction(content)
+{
+	// In this case I just remove the note from the array; note for improvement: instead of deallocating useful
+	// elements from the array and creating new ones when the tool will be used again I could reuse them and change
+	// the position/orientation/color of the notes. To do this a counter variable would be needed; so I could simply hide the note
+	print("undo", mNotesList[len(mNotesList) - 1].GetPosition());
+	adel(mNotesList, len(mNotesList) - 1);
+}
+
+/*
+ * This method redos the last action of this tool.
+ * 
+ * "content" is an array that contains in the first index the position of the note and at the second index its orientation
+ */
+function NotesTool::RedoLastAction(content)
+{
+	// I need to create a note in the place of the last note added. So I create a new one; note for improvement: since I'm
+	// redoing an "add" action, there was definitely a note before in the mNotesList array, so I could simply NOT remove it
+	// from the array when I'm undoing and then when I'm redoing I simply take that note and make it visible again
+	var newNote = CVmObj(mNoteMesh);
+	
+	// Setting the position and orientation of the note using the information from the content array
+	newNote.SetPosition(content[0]);
+	newNote.SetRotationMatrix(content[1]);
+
+	aadd(mNotesList, newNote);
+	
+	print("redo", content[0]);
+}

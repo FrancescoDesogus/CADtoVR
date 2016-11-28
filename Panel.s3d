@@ -56,6 +56,7 @@ class Panel
 	GetPosition();
 	SetRotationMatrix(matrix);
 	GetRotationMatrix();
+	SetPivotPoint(point);
 	Rotate(angle, x, y, z);
 	SetRotation(angle, x, y, z);
 	LocalToWorld(point);
@@ -402,6 +403,11 @@ function Panel::SetRotationMatrix(matrix)
 function Panel::GetRotationMatrix()
 {
 	return mPanel.GetRotationMatrix();
+}
+
+function Panel::SetPivotPoint(point)
+{
+	mPanel.SetPivotPoint(point);
 }
 
 

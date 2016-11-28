@@ -351,7 +351,7 @@ function KeyboardManager::HasPressedMenuButton()
 
 function KeyboardManager::TouchpadLeftSinglePressed()
 {
-	if(KeyPressed("Z"))
+	if(KeyPressed("C"))
 	{
 		if(!mTouchpadLeftSinglePressed)
 		{
@@ -367,7 +367,7 @@ function KeyboardManager::TouchpadLeftSinglePressed()
 
 function KeyboardManager::TouchpadRightSinglePressed()
 {
-	if(KeyPressed("X"))
+	if(KeyPressed("V"))
 	{
 		if(!mTouchpadRightSinglePressed)
 		{
@@ -383,7 +383,7 @@ function KeyboardManager::TouchpadRightSinglePressed()
 
 function KeyboardManager::TouchpadUpSinglePressed()
 {
-	if(KeyPressed(VK_UP))
+	if(KeyPressed("X"))
 	{
 		if(!mTouchpadUpSinglePressed)
 		{
@@ -399,7 +399,7 @@ function KeyboardManager::TouchpadUpSinglePressed()
 
 function KeyboardManager::TouchpadDownSinglePressed()
 {
-	if(KeyPressed(VK_DOWN))
+	if(KeyPressed("Z"))
 	{
 		if(!mTouchpadDownSinglePressed)
 		{

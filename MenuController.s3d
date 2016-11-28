@@ -145,11 +145,20 @@ function MenuController::UpdateLogic(dt, isVRon, actionController)
 		mToolPanel.DeSelectCurrentTool();
 	}
 	
-	if(mInputManager.TouchpadLeftSinglePressed(mViveController.GetIndex()) && mActionsListManager.IsUndoAvailable())
+	if(mInputManager.TouchpadDownSinglePressed(mViveController.GetIndex()) && mActionsListManager.IsUndoAvailable())
 		mActionsListManager.UndoLastAction();
-	
-	if(mInputManager.TouchpadRightSinglePressed(mViveController.GetIndex()) && mActionsListManager.IsRedoAvailable())
+	else if(mInputManager.TouchpadUpSinglePressed(mViveController.GetIndex()) && mActionsListManager.IsRedoAvailable())
 		mActionsListManager.RedoLastAction();
+		
+		
+	if(mInputManager.TouchpadLeftSinglePressed(mViveController.GetIndex()))
+		mToolPanel.RotatePanels(true);
+	else if(mInputManager.TouchpadRightSinglePressed(mViveController.GetIndex()))
+		mToolPanel.RotatePanels(false);
+//	if(mInputManager.TouchpadLeftSinglePressed(mViveController.GetIndex()))
+//		mAnimator.CreateRotatingTransition(mToolsMenu.GetObj(), 0, -90, [0, 1, 0], 1.0, false, false);
+//	else if(mInputManager.TouchpadRightSinglePressed(mViveController.GetIndex()))
+//		mAnimator.CreateRotatingTransition(mToolsMenu.GetObj(), 0, 90, [0, 1, 0], 1.0, false, false);
 }
 
 function MenuController::Draw()

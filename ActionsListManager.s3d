@@ -1,21 +1,40 @@
 
 /*
- * This class is basically a CVmActionsListManager but a little better, since it allows to put string with "\n" and automatically center the position of the strings
+ * This class keeps track of the actions done by the user and allow him/her to undo/redo actions.
+ * The usage is like this: when a given tool does something it must call the AddAction() method passing a reference to itself
+ * and passing the content that would use later in case of undo or redo.
+ * When the user presses the button for undo/redo, the method IsUndo/RedoAvailable() must be called to check whether the undo/redo
+ * can be done now, and in that case the Undo/RedoLastAction() needs to be called.
  */
 class ActionsListManager 
 {
+	// This array contains the actions done by the player; each element of the array is another array that contains in the
+	// first position the reference to the tool used for the action, and in the second position another array containing
+	// ANY information that the tool would need in case of an undo/redo operation
 	var mActionsArray;
+	
+	// This integer contains the index of the last action in the array; even though it's used as a stack I need this so
+	// that when undos are applied the array is not reallocated and the vacant positions at the end of the array are reused
 	var mActionsArrayIndex;
+	
+	// This integer contains the current size of the array, but not the physical size, meaning that the array might have 5 
+	// elements but if this integer's value is 3 then only 3 elements of the array are used and the rest will be considered
+	// vacant, and will be used when new actions are created
 	var mActionsArraySize;
 
 	// Public functions
 	AddAction(tool, content);
+	UndoLastAction();
+	RedoLastAction();
+	IsUndoAvailable();
+	IsRedoAvailable();
+	
+	
+	// Not used functions
 	GetLastActionTool();
 	GetNextActionTool();
 	GetLastActionContent();
 	GetNextActionContent();
-	IsUndoAvailable();
-	IsRedoAvailable();
 	UndoDone();
 	RedoDone();
 };
@@ -43,44 +62,27 @@ function ActionsListManager::AddAction(tool, content)
 	mActionsArraySize = mActionsArrayIndex;
 }
 
-function ActionsListManager::GetLastActionTool()
+function ActionsListManager::UndoLastAction()
 {
 	var lastAction = mActionsArray[mActionsArrayIndex - 1];
+	var lastToolUsed = lastAction[0];
+	var lastToolUsedContent = lastAction[1];
+		
+	lastToolUsed.UndoLastAction(lastToolUsedContent);
 	
-	return lastAction[0];
-}
-
-function ActionsListManager::GetNextActionTool()
-{
-	var lastAction = mActionsArray[mActionsArrayIndex];
-	
-	return lastAction[0];
-}
-
-function ActionsListManager::GetLastActionContent()
-{
-	var lastAction = mActionsArray[mActionsArrayIndex - 1];
-	
-	return lastAction[1];
-}
-
-function ActionsListManager::GetNextActionContent()
-{
-	var lastAction = mActionsArray[mActionsArrayIndex ];
-	
-	return lastAction[1];
-}
-
-function ActionsListManager::UndoDone()
-{	
 	mActionsArrayIndex--;
 }
 
-function ActionsListManager::RedoDone()
-{	
+function ActionsListManager::RedoLastAction()
+{
+	var lastAction = mActionsArray[mActionsArrayIndex];
+	var lastToolUsed = lastAction[0];
+	var lastToolUsedContent = lastAction[1];
+		
+	lastToolUsed.RedoLastAction(lastToolUsedContent);
+	
 	mActionsArrayIndex++;
 }
-
 
 function ActionsListManager::IsUndoAvailable()
 {	
@@ -91,4 +93,45 @@ function ActionsListManager::IsRedoAvailable()
 {	
 	return mActionsArrayIndex < mActionsArraySize;
 }
+
+//function ActionsListManager::GetLastActionTool()
+//{
+//	var lastAction = mActionsArray[mActionsArrayIndex - 1];
+//	
+//	return lastAction[0];
+//}
+//
+//function ActionsListManager::GetNextActionTool()
+//{
+//	var lastAction = mActionsArray[mActionsArrayIndex];
+//	
+//	return lastAction[0];
+//}
+//
+//function ActionsListManager::GetLastActionContent()
+//{
+//	var lastAction = mActionsArray[mActionsArrayIndex - 1];
+//	
+//	return lastAction[1];
+//}
+//
+//function ActionsListManager::GetNextActionContent()
+//{
+//	var lastAction = mActionsArray[mActionsArrayIndex ];
+//	
+//	return lastAction[1];
+//}
+//
+//function ActionsListManager::UndoDone()
+//{	
+//	mActionsArrayIndex--;
+//}
+//
+//function ActionsListManager::RedoDone()
+//{	
+//	mActionsArrayIndex++;
+//}
+
+
+
 

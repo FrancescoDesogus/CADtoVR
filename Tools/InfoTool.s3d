@@ -1,0 +1,76 @@
+
+/*
+ * The notes tool extends the Tool class
+ */
+class InfoTool : Tool
+{
+	// Mesh of a note
+	var mNoteMesh;
+	
+	// This CVmObject represent the "preview" note that is put on the tip of the controller
+	var mPreviewNote;
+	
+	// List of currently active notes
+	var mNotesList;
+	
+	// Shader to render the notes
+	var mNotesShader;
+	
+	
+	// Public functions
+	UpdateLogic(dt);
+	UndoLastAction(content);
+	RedoLastAction(content);
+	
+	// Public inherited functions
+	Draw();
+};
+
+
+function InfoTool::InfoTool(panel, actionController, animator, actionsListManager)
+{
+	// Calling the method that works as constructor for the parent class
+	Tool::this.Init("Textures/icons/select.png", "Info tool", panel, actionController, animator, actionsListManager);
+	
+}
+
+
+/*
+ * This method draws the preview note if the tool is selected and draws any note put in the world
+ */
+function InfoTool::Draw()
+{
+	// Calling the base class method
+	Tool::this.Draw(); 
+}
+
+
+/*
+ * This method updates the logic behind the tool, but only if it's active
+ */
+function InfoTool::UpdateLogic(dt)
+{
+	if(IsToolActive())
+	{
+
+	}
+}
+
+
+/*
+ * This method undos the last action of this tool
+ */
+function InfoTool::UndoLastAction(content)
+{
+
+}
+
+/*
+ * This method redos the last action of this tool.
+ * 
+ * "content" is an array that contains in the first index the position of the note and at the second index its orientation
+ */
+function InfoTool::RedoLastAction(content)
+{
+	
+}

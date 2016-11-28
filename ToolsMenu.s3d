@@ -1,6 +1,6 @@
 #include "ActionsListManager.s3d"
-#include "ToolIcon.s3d"
-#include "Tool.s3d"
+#include "Tools/ToolIcon.s3d"
+#include "Tools/Tool.s3d"
 #include "Panel.s3d"
 
 #include "SelectionPanel.s3d"
@@ -56,6 +56,7 @@ class ToolsMenu
 	IsIntersectionFound();
 	SelectCurrentHoveredTool();
 	DeSelectCurrentTool();
+	RotatePanels(rotateLeft);
 	
 	UndoLastAction();
 	RedoLastAction();
@@ -107,6 +108,11 @@ function ToolsMenu::UpdateLogic(dt, actionController)
 	var contactPoint;
 	var panelIndex = -1;
 	
+	static var rot = 0;
+	
+//	if(Keypressed("M"))
+//		rot += 0.1;
+	
 	// I iterate over all the panels to update their position and to check intersections
 	for(var i = 0; i < len(mPanels); i++)
 	{
@@ -118,6 +124,14 @@ function ToolsMenu::UpdateLogic(dt, actionController)
 		
 		var rotation = QuaternionToAxisAngle(mPanelsRotationQuaternion[i]);
 		panelObj.Rotate(rotation[3] * RAD_TO_GRAD, rotation.x, rotation.y, rotation.z);
+		
+		
+//		var oldPivotPoint = panelObj.GetPosition();
+//		panelObj.SetPivotPoint(panelObj.LocalToWorld(mMenuController.GetPosition()));
+//		
+//		panelObj.Rotate(rot, 0, 0, 1);
+//		
+//		panelObj.SetPivotPoint([0, 0, 0]);
 		
 		var findContact = false;
 		var contactPointTmp;
@@ -185,6 +199,14 @@ function ToolsMenu::DeSelectCurrentTool()
 		mIsToolSelected = mPanels[mCurrentActivePanelIndex].DeSelectCurrentTool();
 		
 	mPreviousActivePanelIndex = -1;
+}
+
+function ToolsMenu::RotatePanels(rotateLeft)
+{
+	if(rotateLeft)
+		mAnimator.CreateRotatingTransition(mToolsMenu.GetObj(), 0, -90, [0, 1, 0], 1.0, false, false);
+	else
+		mAnimator.CreateRotatingTransition(mToolsMenu.GetObj(), 0, 90, [0, 1, 0], 1.0, false, false);
 }
 
 function ToolsMenu::Draw()
