@@ -5,6 +5,7 @@
  */
 class Panel
 {
+	// Reference to the action controller. Used to pass it to the tools to update their logic
 	var mActionController;
 	
 	// Sizes of the panel

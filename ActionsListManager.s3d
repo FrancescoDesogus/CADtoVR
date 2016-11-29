@@ -29,7 +29,6 @@ class ActionsListManager
 	IsUndoAvailable();
 	IsRedoAvailable();
 	
-	
 	// Not used functions
 	GetLastActionTool();
 	GetNextActionTool();
@@ -40,6 +39,9 @@ class ActionsListManager
 };
 
 
+/*
+ * The constructor simply initializes the array and the counters
+ */
 function ActionsListManager::ActionsListManager()
 {
 	mActionsArray = {};
@@ -47,41 +49,68 @@ function ActionsListManager::ActionsListManager()
 	mActionsArraySize = 0;
 }
 
+/*
+ * This method adds an action to the array. It's called by the Tool objects when they do something "undoable"
+ * 
+ * tool: reference to the Tool object that did the action
+ * content: an array containing any useful information for the tool in order to undo/redo the action later
+ */
 function ActionsListManager::AddAction(tool, content)
 {
+	// I create the new action as an array that has as first position the reference to the tool
 	var newAction = {tool, content};
 	
+	// I check whether the array reached max capacity, and in that case I allocate a new element
 	if(mActionsArrayIndex >= len(mActionsArray))
 		aadd(mActionsArray, newAction);
+	// Otherwise, I simply reuse the next vacant slot
 	else
 		mActionsArray[mActionsArrayIndex] = newAction;
 		
+	// I update the counter and the used size of the array to the new value (the array might be bigger though)
 	mActionsArrayIndex++;
-	
-	// Quando si esegue una nuova azione, la grandezza dell'array fittizia è pari al valore dell'indice
 	mActionsArraySize = mActionsArrayIndex;
 }
 
+/*
+ * This method undos the last action saved in the array, if there was any
+ */
 function ActionsListManager::UndoLastAction()
 {
-	var lastAction = mActionsArray[mActionsArrayIndex - 1];
-	var lastToolUsed = lastAction[0];
-	var lastToolUsedContent = lastAction[1];
+	// I only procede if we can undo (i.e. if there actually is an action to undo)
+	if(IsUndoAvailable())
+	{
+		// Getting the last action from the array; the object is an array
+		var lastAction = mActionsArray[mActionsArrayIndex - 1];
 		
-	lastToolUsed.UndoLastAction(lastToolUsedContent);
-	
-	mActionsArrayIndex--;
+		// Getting the reference to the tool and the content
+		var lastToolUsed = lastAction[0];
+		var lastToolUsedContent = lastAction[1];
+			
+		// Using the tool reference we undo the action
+		lastToolUsed.UndoLastAction(lastToolUsedContent);
+		
+		// Updating the counter
+		mActionsArrayIndex--;
+	}
 }
 
+/*
+ * This method redos the next action saved in the array, if there was any. The method is analogous to the undo one
+ */
 function ActionsListManager::RedoLastAction()
 {
-	var lastAction = mActionsArray[mActionsArrayIndex];
-	var lastToolUsed = lastAction[0];
-	var lastToolUsedContent = lastAction[1];
+	if(IsRedoAvailable())
+	{
+		// Getting the NEXT element this time
+		var lastAction = mActionsArray[mActionsArrayIndex];
+		var lastToolUsed = lastAction[0];
+		var lastToolUsedContent = lastAction[1];
+			
+		lastToolUsed.RedoLastAction(lastToolUsedContent);
 		
-	lastToolUsed.RedoLastAction(lastToolUsedContent);
-	
-	mActionsArrayIndex++;
+		mActionsArrayIndex++;
+	}
 }
 
 function ActionsListManager::IsUndoAvailable()
@@ -91,47 +120,6 @@ function ActionsListManager::IsUndoAvailable()
 
 function ActionsListManager::IsRedoAvailable()
 {	
+	// The redo is available if the conter is below the used size of the array
 	return mActionsArrayIndex < mActionsArraySize;
 }
-
-//function ActionsListManager::GetLastActionTool()
-//{
-//	var lastAction = mActionsArray[mActionsArrayIndex - 1];
-//	
-//	return lastAction[0];
-//}
-//
-//function ActionsListManager::GetNextActionTool()
-//{
-//	var lastAction = mActionsArray[mActionsArrayIndex];
-//	
-//	return lastAction[0];
-//}
-//
-//function ActionsListManager::GetLastActionContent()
-//{
-//	var lastAction = mActionsArray[mActionsArrayIndex - 1];
-//	
-//	return lastAction[1];
-//}
-//
-//function ActionsListManager::GetNextActionContent()
-//{
-//	var lastAction = mActionsArray[mActionsArrayIndex ];
-//	
-//	return lastAction[1];
-//}
-//
-//function ActionsListManager::UndoDone()
-//{	
-//	mActionsArrayIndex--;
-//}
-//
-//function ActionsListManager::RedoDone()
-//{	
-//	mActionsArrayIndex++;
-//}
-
-
-
-

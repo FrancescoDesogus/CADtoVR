@@ -16,14 +16,21 @@ class NotesTool : Tool
 	// Shader to render the notes
 	var mNotesShader;
 	
+	// Texture for the note object; passed to the shader
+	var mNoteTexture;
 	
 	// Public functions
 	UpdateLogic(dt);
 	UndoLastAction(content);
 	RedoLastAction(content);
 	
+	// Private functions
+	ManageNotes();
+	ManageColorPicker();
+	
 	// Public inherited functions
 	Draw();
+	SetActionAvailable(isActionAvailable);
 };
 
 
@@ -48,9 +55,13 @@ function NotesTool::NotesTool(panel, actionController, animator, actionsListMana
 	
 	mPreviewNote = CVmObj(mNoteMesh);
 	
+	mPreviewNote.SetScale([0, 0, 0]);
+	
 	mNotesShader = CVmShaderProgram("Shaders/postItShader.glsl");
 	
 	mNotesList = {};
+	
+	mNoteTexture = CVmTexture("Textures/postit.png");
 }
 
 
@@ -61,14 +72,26 @@ function NotesTool::Draw()
 {
 	// Calling the base class method
 	Tool::this.Draw(); 
+	
+	// Activating the texture. This is the only way I managed to pass the texture to the shader
+	SetActiveTexture(mNoteTexture, VR_NO_FILTER, 0);
 
 	// Activating shader and passing the reference to its texture
 	mNotesShader.Start();
-		mNotesShader.SetParameter("tex", CVmTexture("Textures/postit.png"));
+		// I pass the texture to the shader via the id I used in the SetActiveTexture() call above
+		mNotesShader.SetParameter("tex", 0);
 		
-		// If the tool is selected I draw the preview note
-		if(IsToolActive())
+		// If there is an action available (this also implies that the tool is selected) I draw the preview note.
+		// Since when the action is not available anymore (i.e. the user is pointing the menu) I play a little scaling animation,
+		// I want to keep drawing the preview note until the scale reaches 0. So I also draw the preview note if no action
+		// is available and the scale is still above 0
+		if(misActionAvailable || (!misActionAvailable && mPreviewNote.GetScale().x > 0))
+		{
+			mNotesShader.SetParameter("alpha", 0.5);
 			mPreviewNote.Draw();
+		}
+		
+		mNotesShader.SetParameter("alpha", 1.0);
 		
 		// I draw each active note in any case
 		foreach(var note in mNotesList)
@@ -77,20 +100,26 @@ function NotesTool::Draw()
 	mNotesShader.Stop();
 }
 
-
 /*
  * This method updates the logic behind the tool, but only if it's active
  */
 function NotesTool::UpdateLogic(dt)
 {
-	if(IsToolActive())
+	ManageNotes();
+}
+
+function NotesTool::ManageNotes()
+{
+	// I only procede if there is an action available; otherwise there is no reason to update the preview note
+	// or to check if the user clicked to place a note
+	if(misActionAvailable)
 	{
 		// I update the position and orientation of the preview node so that it "follows" the controller
 		mPreviewNote.SetPosition(mActionController.GetControllerTipCoordinates());
 		mPreviewNote.SetRotationMatrix(mActionController.GetRotationMatrix());
 		
 		// If the player presses the trigger on the action controller the note is put in the world
-		if(mActionAvailable && mActionController.PrimaryButtonSinglePressed())
+		if(mActionController.PrimaryButtonSinglePressed())
 		{
 			// Adding the note to the list of persistent notes
 			aadd(mNotesList, mPreviewNote);
@@ -111,6 +140,24 @@ function NotesTool::UpdateLogic(dt)
 			mActionsListManager.AddAction(NotesTool::this, newActionContent);
 		}
 	}
+}
+
+
+/*
+ * This method is INHERITED by the base class Tool; I override it in order to play a little animation when the action
+ * is available (i.e. the player is no longer pointing the menu and the preview note appears)
+ */
+function NotesTool::SetActionAvailable(isActionAvailable)
+{
+	// If there wasn't an action available and now there is, I make the preview note appear
+	if(isActionAvailable && !misActionAvailable)
+		mAnimator.CreateScalingTransition(mPreviewNote, [0, 0, 0], [1.0, 1.0, 1.0], 0.2, false, 2);	
+	// If there was an action available and now there isn't anymore, I make the preview note disappear
+	else if(!isActionAvailable && misActionAvailable)
+		mAnimator.CreateScalingTransition(mPreviewNote, mPreviewNote.GetScale(), [0.0, 0.0, 0.0], 0.2, false, 2);	
+		
+	// I call the base class method only now because otherwise the misActionAvailable boolean always becomes equal to isActionAvailable
+	Tool::this.SetActionAvailable(isActionAvailable); 
 }
 
 

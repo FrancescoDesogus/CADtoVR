@@ -146,9 +146,9 @@ function MenuController::UpdateLogic(dt, isVRon, actionController)
 		mToolPanel.DeSelectCurrentTool();
 	}
 	
-	if(mInputManager.TouchpadLeftSinglePressed(mViveController.GetIndex()) && mActionsListManager.IsUndoAvailable())
+	if(mInputManager.TouchpadLeftSinglePressed(mViveController.GetIndex()))
 		mActionsListManager.UndoLastAction();
-	else if(mInputManager.TouchpadRightSinglePressed(mViveController.GetIndex()) && mActionsListManager.IsRedoAvailable())
+	else if(mInputManager.TouchpadRightSinglePressed(mViveController.GetIndex()))
 		mActionsListManager.RedoLastAction();
 		
 		

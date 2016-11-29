@@ -6,9 +6,6 @@ class SelectionPanel : Panel
 {
 	// Public inherited functions
 	UpdateLogic(dt, actionController);
-	
-	// Private functions
-//	GenerateIconsPositions();
 };
 
 
@@ -18,8 +15,8 @@ function SelectionPanel::SelectionPanel(actionController, animator, actionsListM
 	Panel::this.Init("Selection Tools", actionController, animator, actionsListManager);
 	
 	// Creating the icons
-	var selToolObj = NotesTool(Panel::this, actionController, mAnimator, mActionsListManager);
-	var selToolObj2 = InfoTool(Panel::this, actionController, mAnimator, mActionsListManager);
+	var selToolObj = InfoTool(Panel::this, actionController, mAnimator, mActionsListManager);
+	var selToolObj2 = NotesTool(Panel::this, actionController, mAnimator, mActionsListManager);
 	var selToolObj3 = NotesTool(Panel::this, actionController, mAnimator, mActionsListManager);
 	var selToolObj4 = InfoTool(Panel::this, actionController, mAnimator, mActionsListManager);
 	var selToolObj5 = InfoTool(Panel::this, actionController, mAnimator, mActionsListManager);

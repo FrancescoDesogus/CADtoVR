@@ -10,6 +10,7 @@ void main()
 
 // Texture of the object
 uniform sampler2D tex;
+uniform float alpha;
 
 void main()
 {
@@ -23,5 +24,5 @@ void main()
 	else
 		colorFromTex = vec3(0.0, 1.0, 0.0);
     	
-	gl_FragColor = vec4(colorFromTex, 1.0);
+	gl_FragColor = vec4(colorFromTex, alpha);
 }

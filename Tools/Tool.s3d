@@ -1,43 +1,51 @@
  
+/*
+ * This is an abstract class that represents a Tool and implements the basic things that each Tool has
+ */
 class Tool
 {
+	// Reference to the action controller. It's needed to almost every tool in order to check if the user 
+	// pressed something, where he's pointing or whatever. So, it's needed to update the tool's logic
 	var mActionController;
 	
-	// String containing the name of the tool this icon represents
+	// String and Text object containing the name of the tool
 	var mToolNameString;
-	
-	// ID of the tool
-//	var mToolID;
+	var mToolNameText;
 	
 	// ToolIcon object containing the icon
 	var mToolIcon;
 	
+	// Reference to the Panel object in which this tool is put. Used to put as child of the panel the elements in the Tool
 	var mPanel;
 	
-	var mToolNameText;
-	
+	// Boolean that is true when the tool is selected by the user
 	var mIsToolActive;
 	
+	// Boolean that is true when an action is available (for example, for the notes tool it becomes true when the user can place notes)
+	var mIsActionAvailable;
+	
+	// Reference to the Animator object in order to create animations
 	var mAnimator;
 	
+	// Reference to the ActionsListManager in order to have access to the undo/redo mechanism
 	var mActionsListManager;
 	
-	var mActionAvailable;
-	
+	// This method works as the constructor for the class: the classes that will inherit from this class will need to call
+	// this in their constructor as the first call 
+	Init(textureString, name, panel, actionController, animator, actionsListManager);
 	
 	// Public functions
 	Draw();
-	GetIconWidth();
-	GetIconHeight();
 	GetIconObj();
+	IsToolActive();
+	SetToolActive(active);
+	SetActionAvailable(actionAvailable);
 	GetName();
-	GetID();
+	
 	SetPosition(position);
-	SetIconCollisionPosition(position);
 	Translate(transl);
 	GetPosition();
 	SetRotationMatrix(matrix);
-	SetIconCollisionRotationMatrix(matrix);
 	GetRotationMatrix();
 	Rotate(angle, x, y, z);
 	SetRotation(angle, x, y, z);
@@ -48,33 +56,23 @@ class Tool
 	GetScale();
 	IsVisible();
 	IsCollidingBBox(object);
-	
-	IsIconColliding(rayOrigin, rayEnd, contactPoint);
-	IsToolActive();
-	SetToolActive(active);
-//	UpdateLogic(dt, viveController);
-	SetActionAvailable(actionAvailable);
-
-	Init(textureString, name, panel, actionController, animator, actionsListManager);
 };
 
 
-function Tool::Tool(textureString, name, panel, actionController, animator)
+function Tool::Tool()
 {
-//	mToolNameString = name;
-////	mToolID = id;
-//	mPanel = panel;
-//	mAnimator = animator;
-//	
-//	mToolNameText = Text(name, 0.3, [1, 1, 1]);
-//	mPanel.AddChild(mToolNameText.GetObj(), 0.05 * SCALE_FACTOR, mPanel.GetHeight() / 2.0 - mToolNameText.GetFontHeight(), 0.01 * SCALE_FACTOR);
-//	mToolNameText.Hide();
-//	
-//	mToolIcon = ToolIcon(textureString, name);
-//	
-//	mIsToolActive = false;
+
 }
 
+/*
+ * Method that works as constructor.
+ * 
+ * textureString: string object containing the URL to the image used as icon for the tool
+ * name: string containing the name of the tool
+ * actionController: ActionController reference
+ * animator: Animator reference
+ * actionsListManager: ActionsListManager reference
+ */
 function Tool::Init(textureString, name, panel, actionController, animator, actionsListManager)
 {
 	mToolNameString = name;
@@ -83,15 +81,17 @@ function Tool::Init(textureString, name, panel, actionController, animator, acti
 	mAnimator = animator;
 	mActionsListManager = actionsListManager;
 	
-	
+	// Creating the text object and putting it as child of the panel. I also make it invisible for now, since no tool 
+	// is selected at the start
 	mToolNameText = Text(name, 0.3, [1, 1, 1]);
 	mPanel.AddChild(mToolNameText.GetObj(), 0.05 * SCALE_FACTOR, mPanel.GetHeight() / 2.0 - mToolNameText.GetFontHeight(), 0.01 * SCALE_FACTOR);
 	mToolNameText.Hide();
 	
+	// Creating the tool icon
 	mToolIcon = ToolIcon(textureString, name);
 	
 	mIsToolActive = false;
-	mActionAvailable = false;
+	mIsActionAvailable = false;
 }
 
 function Tool::IsToolActive()
@@ -101,37 +101,37 @@ function Tool::IsToolActive()
 
 function Tool::SetActionAvailable(actionAvailable)
 {
-	mActionAvailable = actionAvailable;
+	mIsActionAvailable = actionAvailable;
 }
 
+/*
+ * This method is called when the tool is selected or deselected
+ */
 function Tool::SetToolActive(active)
 {
 	mIsToolActive = active;
 	
+	// I show/hide the Text object
 	mToolNameText.SetVisibility(active);
 	
-	var initialTextScale = [1, 0, 1];
-	var endingTextScale = {initialTextScale, [1, 1, 1]};
-	
-	if(!active)
+	// If the tool is being selected I play a little scaling animation on the Text object. If it's the other way around I
+	// don't do it because I would need to add checks to keep drawing the text until the scale reaches 0 and it's a pain in the ass
+	if(active)
 	{
-		initialTextScale = [1, 1, 1];
-		endingTextScale = [1, 0, 1];
-	}
+		var initialTextScale = [1, 0, 1];
 		
-	mAnimator.CreateScalingTransition(mToolNameText.GetObj(), initialTextScale, endingTextScale, 0.2, false, 2);
+		// For the ending scale I cheat: basically I want to start the animation a little later, when the scaling animation
+		// of the panels own Text object ends. I don't know when it ends, but I'm assuming that it lasts for 0.2, so
+		// to make a delay I simply set a waypoint for the ending scale that does nothing, and then the actual scale begins
+		var endingTextScale = {initialTextScale, [1, 1, 1]};
+		
+		mAnimator.CreateScalingTransition(mToolNameText.GetObj(), initialTextScale, endingTextScale, 0.2, false, 2);
+	}
 }
 
 function Tool::Draw()
 {
-	glDisable(GL_LIGHTING);
 	mToolIcon.Draw();
-	glEnable(GL_LIGHTING);
-	
-	if(mIsToolActive)
-	{
-		
-	}
 }
 
 function Tool::GetIconObj()
@@ -143,11 +143,6 @@ function Tool::GetName()
 {
 	return mToolNameString;
 }
-
-//function Tool::GetID()
-//{
-//	return mToolID;	
-//}
 
 function Tool::SetPosition(position)
 {
