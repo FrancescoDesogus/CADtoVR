@@ -5,7 +5,6 @@
 #define USE_INPUT_MANAGER 2
 
 #include <InputManagers/KeyboardManager.s3d>
-#include <InputManagers/GamepadManager.s3d>
 #include <InputManagers/ViveManager.s3d>
 
 /*
@@ -57,14 +56,7 @@ function InputManager::InputManager(isVRon, HMD)
 	if(mIsVRon)
 		mManager = ViveManager(HMD);
 	else
-	{
-		var joystick = CVmJoystick();
-		
-		if(!joystick.Enabled)
-			mManager = KeyboardManager();
-		else
-			mManager = GamepadManager(joystick);
-	}
+		mManager = KeyboardManager();
 }
 
 /*

@@ -6,12 +6,6 @@ class ActionController
 	
 	var mInputManager;
 	
-	var mPanelDistanceToController;
-	var mToolPanelWidth;
-	var mToolPanelHeight;
-	var mToolPanelDepth;
-	
-	var mRayOrigin;
 	var mRayEnd;
 	var mDrawRay;
 	
@@ -41,7 +35,7 @@ class ActionController
 	IsCollidingBBox(object);
 	
 	UpdateLogic(dt, debugMode);
-	SetDrawRay(drawRay, rayOrigin, rayEnd);
+	SetDrawRay(drawRay, rayEnd);
 	PrimaryButtonSinglePressed();
 };
 
@@ -52,7 +46,6 @@ function ActionController::ActionController(viveController, inputManager)
 	mControllerIndex = mViveController.GetIndex();
 	mInputManager = inputManager;
 	
-	mRayOrigin = [0, 0, 0];
 	mRayEnd = [0, 0, 0];
 	mDrawRay = false;
 	
@@ -120,10 +113,9 @@ function ActionController::UpdateLogic(dt, debugMode)
 	mDashedLinesOffset += 0.001;
 }
 
-function ActionController::SetDrawRay(drawRay, rayOrigin, rayEnd)
+function ActionController::SetDrawRay(drawRay, rayEnd)
 {
 	mDrawRay = drawRay;
-	mRayOrigin = rayOrigin;
 	mRayEnd = rayEnd;
 }
 
@@ -133,11 +125,13 @@ function ActionController::Draw()
 	
 	if(mDrawRay)
 	{
+		var rayOrigin = GetPosition();
+		
 		// Rendering of the ray
 		mDashedLineShader.Start();
 			// Parameters for the ray's shader
-			mDashedLineShader.SetParameter("sourcePosition", mRayOrigin);
-			mDashedLineShader.SetParameter("lineLength", Modulus(mRayEnd - mRayOrigin));
+			mDashedLineShader.SetParameter("sourcePosition", rayOrigin);
+			mDashedLineShader.SetParameter("lineLength", Modulus(mRayEnd - rayOrigin));
 			mDashedLineShader.SetParameter("color", [0.7, 0, 0.7]);
 			mDashedLineShader.SetParameter("ticksLength", 0.17 * SCALE_FACTOR);
 			mDashedLineShader.SetParameter("offset", mDashedLinesOffset);
@@ -146,7 +140,7 @@ function ActionController::Draw()
 			
 			// I draw the ray as a simple opengl line
 			glBegin(GL_LINES);
-				glVertex(mRayOrigin);
+				glVertex(rayOrigin);
 				glVertex(mRayEnd);		
 			glEnd();
 		mDashedLineShader.Stop();

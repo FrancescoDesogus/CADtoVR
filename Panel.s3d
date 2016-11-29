@@ -1,3 +1,5 @@
+#include "Tools/ToolIcon.s3d"
+#include "Tools/Tool.s3d"
 
 /*
  * This class has to be considered as an abstract class: it must be inherited by other classes. It handles the generic things of a panel
@@ -36,8 +38,10 @@ class Panel
 	// When the user selects an icon with the action controller, this variable holds the reference to the tool's icon
 	var mCurrentlySelectedTool;
 	
+	// Boolean that is true if a tool in this panel is selected
 	var mIsToolSelected;
 	
+	// This is a reference to the ActionsListManager object that is in charge of the undo/redo mechanism
 	var mActionsListManager;
 	
 	
@@ -49,7 +53,7 @@ class Panel
 	Draw();
 	GetWidth();
 	GetHeight();
-	FindIntersection(rayOrigin, rayEnd);
+	FindHoveredIcon(rayOrigin, rayEnd);
 	SelectCurrentHoveredTool();
 	DeSelectCurrentTool();
 	GenerateIconsPositions();
@@ -57,7 +61,7 @@ class Panel
 	
 	// Public functions that need to be overwritten; the classes that will inherit from this class will still need to call
 	// this method in their override function as the first call, to update general things of the panel
-	UpdateLogic(dt, actionController);
+	UpdateLogic(dt);
 	
 	// Common functions
 	GetObj();
@@ -120,14 +124,15 @@ function Panel::Init(panelName, actionController, animator, actionsListManager)
 }
 
 /*
- * This method currently only updates the position of the icons in the panel
+ * This method updates the logic of the panel; in particular updates the position of its elements
  */
-function Panel::UpdateLogic(dt, actionController)
+function Panel::UpdateLogic(dt)
 {
 	var toolsRows = len(mTools);
 	
 	var initialYoffset = 0.1 * SCALE_FACTOR;
 	
+	// If no tool is selected in the panel I update the position of the tools' icons
 	if(!mIsToolSelected)
 	{
 		// I need to position every icon, so I iterate over all of the rows of icons
@@ -141,14 +146,19 @@ function Panel::UpdateLogic(dt, actionController)
 			{
 				var toolIcon = toolRow[j].GetIconObj();
 	
-				// Finally, I can set the position and orientation of the icon
+				// Finally, I can set the position and orientation of the icon (or actually of its collision 
+				// object; more details in the ToolIcon class)
 				toolIcon.SetCollisionPosition(mPanel.LocalToWorld(toolIcon.GetDefaultPosition()));
 				toolIcon.SetCollisionRotationMatrix(mPanel.GetRotationMatrix());
 			}
 		}
 	}
+	// If a tool is selected I update its logic
 	else
 	{
+		// Since when a tool is selected I do the scaling animation with the other icons and the panel's name, I need to
+		// hide these objects when the scaling is done, i.e. when the scale reaches 0. So I check the visibility of the text
+		// and I assume that when its scale is 0 also the icons' are 0
 		if(mPanelName.IsVisible() && mPanelName.GetScale().x <= 0)
 		{
 			mPanelName.Hide();
@@ -161,24 +171,27 @@ function Panel::UpdateLogic(dt, actionController)
 				{
 					var toolIcon = toolRow[j].GetIconObj();
 					
+					// I hide the icon if it's not the current one selected
 					if(toolIcon != mCurrentlySelectedTool.GetIconObj())
 						toolIcon.Hide();
 				}
 			}
 		}
 		
-		mCurrentlySelectedTool.UpdateLogic(dt, actionController);
+		// I update the logic of the currently active tool
+		mCurrentlySelectedTool.UpdateLogic(dt);
 	}
 }
 
 /*
- * This method is onyl called by the ToolsMenu class if there is an intersection of a ray inside the panel, i.e. the action controller
- * is directly pointing this panel. This method has the task of finding where the ray is hitting
+ * This method is onyl called by the ToolsMenu class if there is an intersection of a ray inside the panel, i.e.
+ * the action controller is directly pointing this panel. This method has the task of finding WHERE in the panel the ray is hitting
  */
-function Panel::FindIntersection(rayOrigin, rayEnd)
+function Panel::FindHoveredIcon(rayOrigin, rayEnd)
 {
 	var found = false;
 	
+	// I look for the hovered icon only if there is no tool active in this panel
 	if(!mIsToolSelected)
 	{
 		// I need to check if the ray is pointing any icon
@@ -201,6 +214,7 @@ function Panel::FindIntersection(rayOrigin, rayEnd)
 						mCurrentHoveredTool = toolRow[j];
 						mAnimator.CreateScalingTransition(toolIcon.GetObj(), toolIcon.GetScale(), [1.35, 1.35, 1], 0.1, false);	
 						
+						// I show the icon's "tooltip"
 						toolIcon.SetIconNameVisibility(true);
 					}
 				}
@@ -217,37 +231,29 @@ function Panel::FindIntersection(rayOrigin, rayEnd)
 		}
 	}
 	else
-	{
 		mCurrentHoveredTool = Void;
-//		if(mPanelName.IsVisible() && mPanelName.GetScale().x <= 0)
-//		{
-//			mPanelName.Hide();
-//			
-//			for(var i = 0; i < len(mTools) && !found; i++)
-//			{
-//				var toolRow = mTools[i];
-//				
-//				for(var j = 0; j < len(toolRow) && !found; j++)
-//					if(toolRow[j] != mCurrentHoveredTool)
-//						toolRow[j].Hide();
-//			}
-//		}
-	}
-	
-	
 }
 
+/*
+ * This method activates the current hovered tool, if there was any.
+ * 
+ * Returns true if a tool was selected, false otherwise
+ */
 function Panel::SelectCurrentHoveredTool()
 {
+	// I only procede if there was an hovered tool
 	if(mCurrentHoveredTool != Void)
 	{
 		var hoveredToolIcon = mCurrentHoveredTool.GetIconObj();
 		
+		// I hide the icon's "tooltip"
 		hoveredToolIcon.SetIconNameVisibility(false);
 		
+		// I create a scaling transition for the panel's name to make it disappear
 //		mPanelName.SetPivotPoint(mPanelName.LocalToWorld([-mPanelName.GetWidthOfLine(0) / 2.0, 0, 0]));
 		mAnimator.CreateScalingTransition(mPanelName.GetObj(), mPanelName.GetScale(), [0, 1, 0], 0.2, false, 2);	
 		
+		// I create a scaling transition for every icon
 		for(var i = 0; i < len(mTools); i++)
 		{
 			var toolRow = mTools[i];
@@ -261,22 +267,31 @@ function Panel::SelectCurrentHoveredTool()
 			}
 		}
 		
+		// I state that the tool hovered is now active
 		mCurrentHoveredTool.SetToolActive(true);
 		
+		// Since the tool's icon was hovered it was bigger, so I scale it down to default
 		mAnimator.CreateScalingTransition(hoveredToolIcon.GetObj(), hoveredToolIcon.GetScale(), [1, 1, 1], 0.2, false, 2);	
 		
-		
+		// I create a transition to bring the icon up
 		var endPos = [-GetWidth() / 2.0 + hoveredToolIcon.GetWidth(), GetHeight() / 2.0 - hoveredToolIcon.GetHeight(), 0.01 * SCALE_FACTOR];	
 		mAnimator.CreateTransition(hoveredToolIcon, hoveredToolIcon.GetPosition(), endPos, 0.3, false, 2);
 		
+		// I save the fact that in this panel a tool is active
 		mIsToolSelected = true;
 		
+		// I save the reference to the active tool
 		mCurrentlySelectedTool = mCurrentHoveredTool;
 	}
 	
 	return mIsToolSelected;
 }
 
+/*
+ * This method deactivates the current active tool, if there was any. It's analogous to the "SelectCurrentTool" method
+ * 
+ * Returns true if a tool was deselected, false otherwise
+ */
 function Panel::DeselectCurrentTool()
 {
 	if(mIsToolSelected)
@@ -308,13 +323,16 @@ function Panel::DeselectCurrentTool()
 		
 		mAnimator.CreateTransition(hoveredToolIcon, hoveredToolIcon.GetPosition(), hoveredToolIcon.GetDefaultPosition(), 0.3, false, 2);
 		
+		mCurrentHoveredTool = Void;
 		mCurrentlySelectedTool = Void;
-		mCurrentHoveredTool = mCurrentlySelectedTool;
 	}
 	
 	return mIsToolSelected;
 }
 
+/*
+ * This method draws the tool's icons and the panel
+ */
 function Panel::Draw()
 {
 	// Drawing each icon
@@ -323,15 +341,18 @@ function Panel::Draw()
 		var toolRow = mTools[i];
 		
 		for(var j = 0; j < len(toolRow); j++)
-		{
 			toolRow[j].Draw();
-		}
 	}
 	
 	// Drawing the panel itself; I draw it last so that it can render the opacity right
 	mPanel.Draw();
 }
 
+/*
+ * This method MUST be called by the class the inherits from Panel in its constructor, at the end. Basically what it does
+ * is compute the position of each tool's icon in the panel according to the number of tools displayed in each row, and
+ * saves the position (known as "default position") in each ToolIcon object
+ */
 function Panel::GenerateIconsPositions()
 {
 	var toolsRows = len(mTools);
@@ -363,20 +384,28 @@ function Panel::GenerateIconsPositions()
 	}
 }
 
+/*
+ * This method tells the currently active tool (if there is one) that it can/cannot do actions. It's different from the activation
+ * or deactivation of a tool; for example in the notes tool when the controller is pointing the menu the tool is active but
+ * it can't do any actions, meaning that it can't place notes
+ */
 function Panel::SetActionAvailable(actionAvailable)
 {
 	if(mIsToolSelected)
-	{
 		mCurrentlySelectedTool.SetActionAvailable(actionAvailable);
-	}
 }
 
+/*
+ * This method returns the width of the panel (which includes the edge thickness)
+ */
 function Panel::GetWidth()
 {
 	return mToolPanelWidth + mToolPanelSilhouetteTickness;
 }
 
-
+/*
+ * This method returns the height of the panel (which includes the edge thickness)
+ */
 function Panel::GetHeight()
 {
 	return mToolPanelHeight + mToolPanelSilhouetteTickness;

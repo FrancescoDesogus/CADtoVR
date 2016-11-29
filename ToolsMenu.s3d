@@ -1,43 +1,56 @@
-#include "ActionsListManager.s3d"
-#include "Tools/ToolIcon.s3d"
-#include "Tools/Tool.s3d"
 #include "Panel.s3d"
 
 #include "SelectionPanel.s3d"
 #include "MeasuringPanel.s3d"
 
+/*
+ * This class manages the menu for the tools, i.e. the menu panels
+ */
 class ToolsMenu
 {
+	// Reference to both the action controller and the menu controller
 	var mActionController;
 	var mMenuController;
 	
-	var mToolsMenuDistanceToController;
-	var mToolPanelWidth;
-	var mToolPanelHeight;
-	var mToolPanelDepth;
-	
-	var mToolsMenu;
+	// These are 3 arrays. The first one contains Panel objects; the second one contains, for each panel, its position offset
+	// with respect to the menu controller, and the third one, for each panel, its orientation. These last 2 arrays are 
+	// used to position the panels correctly at each tick
 	var mPanels;
 	var mPanelsPositionOffset;
 	var mPanelsRotationQuaternion;
 	
+	// If one of the panels is hit by the action controller ray, this vector contains the contact point
 	var mIntersectionPoint;
 	
+	// Animator object used to animate the panels (and each tool inside of them) when needed
 	var mAnimator;
 	
+	// These integers contain the index of the currently/previously active panel; a panel is considered "active" 
+	// when the action controller ray intersects it. When none is active their value is -1
+	// This integer contains the index of the current hovered tool, i.e. the tool that is being pointed at by the action controller.
+	// If no panel is being hovered its value is -1
+	var mCurrentHoveredPanelIndex;
+	
+	// This integer contains the index of the current active tool, i.e. the tool that is being has a selected tool in it.
+	// If there is no such panel its value is -1
 	var mCurrentActivePanelIndex;
-	var mPreviousActivePanelIndex;
+	
+	// Boolean that is true when one of the panel's tools is active
 	var mIsToolSelected;
 	
+	// This is a reference to the ActionsListManager object that is in charge of the undo/redo mechanism
 	var mActionsListManager;
+	
 	
 	// Public functions
 	Draw();
-	GetObj();
-	GetIndex();
-	SetActionAvailable(isActionAvailable);
-	GetControllerTipCoordinates();
-	GetDirection();
+	UpdateLogic(dt);
+	IsIntersectionFound();
+	SelectCurrentHoveredTool();
+	DeSelectCurrentTool();
+	RotatePanels(rotateLeft);
+	
+	// Common functions
 	SetPosition(position);
 	Translate(transl);
 	GetPosition();
@@ -51,37 +64,34 @@ class ToolsMenu
 	SetScale(x, y, z);
 	IsVisible();
 	IsCollidingBBox(object);
-	
-	UpdateLogic(dt, actionController);
-	IsIntersectionFound();
-	SelectCurrentHoveredTool();
-	DeSelectCurrentTool();
-	RotatePanels(rotateLeft);
-	
-	UndoLastAction();
-	RedoLastAction();
 };
 
-
+/*
+ * Constructor
+ * 
+ * menuController: MenuController object
+ * actionController: ActionController object
+ * actionsListManager: ActionsListManager object
+ */
 function ToolsMenu::ToolsMenu(menuController, actionController, actionsListManager)
 {
 	mMenuController = menuController;
 	mActionController = actionController;
-	
 	mActionsListManager = actionsListManager;
-	
-	mIntersectionPoint = [0, 0, 0];
 	
 	mAnimator = Animator();
 	
+	mIntersectionPoint = [0, 0, 0];
+		
+	mCurrentHoveredPanelIndex = -1;
 	mCurrentActivePanelIndex = -1;
-	mPreviousActivePanelIndex = -1;
 	mIsToolSelected = false;
 	
 	mPanels = {};
 	mPanelsPositionOffset = {};
 	mPanelsRotationQuaternion = {};
 	
+	// Creation of the selection panel
 	var selectionPanelObj = SelectionPanel(actionController, mAnimator, mActionsListManager);
 	var positionOffset = [0, mMenuController.GetHeight() / 2.0, selectionPanelObj.GetHeight() / 3.0];
 	var quaternion = EulerToQuaternion([-90, 0, 0]);
@@ -90,6 +100,7 @@ function ToolsMenu::ToolsMenu(menuController, actionController, actionsListManag
 	aadd(mPanelsPositionOffset, positionOffset);
 	aadd(mPanelsRotationQuaternion, quaternion);
 	
+	// Creation of the measuring panel
 	selectionPanelObj = MeasuringPanel(actionController, mAnimator, mActionsListManager);
 	positionOffset = [-selectionPanelObj.GetWidth() / 2.0, -selectionPanelObj.GetHeight() / 3.0, mMenuController.GetDepth() / 3.0];
 	quaternion = EulerToQuaternion([0, -90, 90]);
@@ -99,17 +110,23 @@ function ToolsMenu::ToolsMenu(menuController, actionController, actionsListManag
 	aadd(mPanelsRotationQuaternion, quaternion);
 }
 
-function ToolsMenu::UpdateLogic(dt, actionController)
+/*
+ * This method updates the menu's logic
+ */
+function ToolsMenu::UpdateLogic(dt)
 {
-	var rayOrigin = actionController.GetPosition();
-	var rayEnd = actionController.GetDirection() * CameraGetCurrent().GetZFar();
+	// First, I need to check if the action controller is pointing the menu
+	var rayOrigin = mActionController.GetPosition();
+	var rayEnd = mActionController.GetDirection() * CameraGetCurrent().GetZFar();
 	
+	// Depending on the order of the panels in the array or their position, more than one panel could be considered hit.
+	// So I consider only the closest panel hit, and I need to find it
 	var contactDistance = CameraGetCurrent().GetZFar();
 	var contactPoint;
 	var panelIndex = -1;
 	
-	static var rot = 0;
-	
+//	static var rot = 0;
+//	
 //	if(Keypressed("M"))
 //		rot += 0.1;
 	
@@ -122,6 +139,8 @@ function ToolsMenu::UpdateLogic(dt, actionController)
 		panelObj.SetPosition(mMenuController.LocalToWorld(mPanelsPositionOffset[i]));
 		panelObj.SetRotationMatrix(mMenuController.GetRotationMatrix());
 		
+		// I now rotate the panel according to its orientation. This is the only practical way I found. This function
+		// returns the angle of the quaternion in radiants, so I need to convert it
 		var rotation = QuaternionToAxisAngle(mPanelsRotationQuaternion[i]);
 		panelObj.Rotate(rotation[3] * RAD_TO_GRAD, rotation.x, rotation.y, rotation.z);
 		
@@ -152,33 +171,77 @@ function ToolsMenu::UpdateLogic(dt, actionController)
 			}
 		}
 				
-		// I update the logic of the panel (currently it's only the position of the icons)
-		panelObj.UpdateLogic(dt, actionController);
+		// I update the logic of the panel
+		panelObj.UpdateLogic(dt);
 	}
 	
 	// If a panel was intersected, I check if any icon was intersected, and save the contact point for later (it will be used
 	// by the MenuController class to pass it to the ActionController class to draw the ray
 	if(panelIndex != -1)
 	{
-		mCurrentActivePanelIndex = panelIndex;
+		// Since this panel was hit, I consider it as hovered
+		mCurrentHoveredPanelIndex = panelIndex;
 		
-		mPanels[panelIndex].FindIntersection(rayOrigin, rayEnd);
+		// I know that there was an intersection in the panel, but I don't know exactly where. With this method the panel
+		// checks where the ray hit, and if it hit an icon it activates the "hovering"
+		mPanels[panelIndex].FindHoveredIcon(rayOrigin, rayEnd);
+		
+		// I save the contact point for later
 		mIntersectionPoint = contactPoint;
 		
-		if(mPreviousActivePanelIndex != -1)
-			mPanels[mPreviousActivePanelIndex].SetActionAvailable(false);
+		// If there is an active panel right now, i.e. a panel that has a selected tool, I set it's action availability to none, 
+		// meaning that the selected tool can't operate since the controller is pointing the menu
+		if(mCurrentActivePanelIndex != -1)
+			mPanels[mCurrentActivePanelIndex].SetActionAvailable(false);
 	}
+	// If no panel was hit...
 	else
 	{
-		mCurrentActivePanelIndex = -1;
+		// ...I save the fact that there is no hovered panel and no intersection
+		mCurrentHoveredPanelIndex = -1;
 		mIntersectionPoint = Void;
 		
-		if(mPreviousActivePanelIndex != -1)
-			mPanels[mPreviousActivePanelIndex].SetActionAvailable(true);
+		// If there is an active panel I reset the action availability since the user is no longer pointing the menu
+		if(mCurrentActivePanelIndex != -1)
+			mPanels[mCurrentActivePanelIndex].SetActionAvailable(true);
 	}
 	
-		
+	// Updating the animations, if there are any
 	mAnimator.UpdateTransitions(dt);
+}
+
+/*
+ * This method selects the current hovered tool, if there is any
+ */
+function ToolsMenu::SelectCurrentHoveredTool()
+{
+	// I procede only if the current hovered panel is NOT the active panel
+	if(mCurrentActivePanelIndex != mCurrentHoveredPanelIndex)
+	{
+		// First I deselect the current active tool; if there wasn't any this does not have any effect
+		DeSelectCurrentTool();
+		
+		// I select the current hovered tool in the panel; if actually there was no hovered tool, it returns false
+		mIsToolSelected = mPanels[mCurrentHoveredPanelIndex].SelectCurrentHoveredTool();
+		
+		// If indeed a tool was selected, I update the index of the variable
+		if(mIsToolSelected)
+			mCurrentActivePanelIndex = mCurrentHoveredPanelIndex;
+	}
+}
+
+/*
+ * This method deselects the current hovered tool, if there was any
+ */
+function ToolsMenu::DeSelectCurrentTool()
+{
+	// I only procede if there actually was a selected tool in any panel
+	if(mIsToolSelected)
+	{
+		mIsToolSelected = mPanels[mCurrentActivePanelIndex].DeSelectCurrentTool();
+		
+		mCurrentActivePanelIndex = -1;
+	}
 }
 
 /*
@@ -189,24 +252,6 @@ function ToolsMenu::IsIntersectionFound()
 	return mIntersectionPoint;
 }
 
-function ToolsMenu::SelectCurrentHoveredTool()
-{
-	if(mPreviousActivePanelIndex != -1 && mPreviousActivePanelIndex != mCurrentActivePanelIndex)
-		mPanels[mPreviousActivePanelIndex].DeSelectCurrentTool();
-
-	mPreviousActivePanelIndex = mCurrentActivePanelIndex;
-	
-	mIsToolSelected = mPanels[mCurrentActivePanelIndex].SelectCurrentHoveredTool();
-}
-
-function ToolsMenu::DeSelectCurrentTool()
-{
-	if(mIsToolSelected)
-		mIsToolSelected = mPanels[mPreviousActivePanelIndex].DeSelectCurrentTool();
-		
-	mPreviousActivePanelIndex = -1;
-}
-
 function ToolsMenu::RotatePanels(rotateLeft)
 {
 //	if(rotateLeft)
@@ -215,86 +260,87 @@ function ToolsMenu::RotatePanels(rotateLeft)
 //		mAnimator.CreateRotatingTransition(mToolsMenu.GetObj(), 0, 90, [0, 1, 0], 1.0, false, false);
 }
 
+/*
+ * This method draws the panels
+ */
 function ToolsMenu::Draw()
 {
 	for(var i = 0; i < len(mPanels); i++)
-	{
 		mPanels[i].Draw();
-	}
 }
 
-function ToolsMenu::GetObj()
-{
-	return mToolsMenu.GetObj();
-}
-
-//function ToolsMenu::SetActionAvailable(isActionAvailable)
+//function ToolsMenu::GetObj()
 //{
-//	mMenuController.SetActionAvailable(isActionAvailable);
+//	return mToolsMenu.GetObj();
 //}
-
-function ToolsMenu::SetPosition(position)
-{
-	mToolsMenu.SetPosition(position);
-}
-
-function ToolsMenu::GetPosition()
-{
-	return mToolsMenu.GetPosition();
-}
-
-function ToolsMenu::SetRotationMatrix(matrix)
-{
-	mToolsMenu.SetRotationMatrix(matrix);
-}
-
-function ToolsMenu::GetRotationMatrix()
-{
-	return mToolsMenu.GetRotationMatrix();
-}
-
-
-function ToolsMenu::Rotate(angle, x, y, z)
-{
-	mToolsMenu.Rotate(angle, x, y, z);
-}
-
-function ToolsMenu::SetRotation(angle, x, y, z)
-{
-	mToolsMenu.SetRotation(angle, x, y, z);
-}
-
-function ToolsMenu::LocalToWorld(point)
-{
-	return mToolsMenu.LocalToWorld(point);
-}
-
-function ToolsMenu::Hide()
-{
-	mToolsMenu.Hide();
-}
-
-function ToolsMenu::Unhide()
-{
-	mToolsMenu.Unhide();
-}
-
-function ToolsMenu::SetScale(x, y, z)
-{
-	mToolsMenu.SetScale(x, y, z);
-}
-
-//function ToolsMenu::IsVisible()
+//
+////function ToolsMenu::SetActionAvailable(isActionAvailable)
+////{
+////	mMenuController.SetActionAvailable(isActionAvailable);
+////}
+//
+//function ToolsMenu::SetPosition(position)
 //{
-//	return mMenuController.IsVisible();
+//	mToolsMenu.SetPosition(position);
 //}
-
-function ToolsMenu::Translate(transl)
-{
-	mToolsMenu.Translate(transl);
-}
-
-function ToolsMenu::IsCollidingBBox(object)
-{
-	return mToolsMenu.IsCollidingBBox(object);
-}
+//
+//function ToolsMenu::GetPosition()
+//{
+//	return mToolsMenu.GetPosition();
+//}
+//
+//function ToolsMenu::SetRotationMatrix(matrix)
+//{
+//	mToolsMenu.SetRotationMatrix(matrix);
+//}
+//
+//function ToolsMenu::GetRotationMatrix()
+//{
+//	return mToolsMenu.GetRotationMatrix();
+//}
+//
+//
+//function ToolsMenu::Rotate(angle, x, y, z)
+//{
+//	mToolsMenu.Rotate(angle, x, y, z);
+//}
+//
+//function ToolsMenu::SetRotation(angle, x, y, z)
+//{
+//	mToolsMenu.SetRotation(angle, x, y, z);
+//}
+//
+//function ToolsMenu::LocalToWorld(point)
+//{
+//	return mToolsMenu.LocalToWorld(point);
+//}
+//
+//function ToolsMenu::Hide()
+//{
+//	mToolsMenu.Hide();
+//}
+//
+//function ToolsMenu::Unhide()
+//{
+//	mToolsMenu.Unhide();
+//}
+//
+//function ToolsMenu::SetScale(x, y, z)
+//{
+//	mToolsMenu.SetScale(x, y, z);
+//}
+//
+////function ToolsMenu::IsVisible()
+////{
+////	return mMenuController.IsVisible();
+////}
+//
+//function ToolsMenu::Translate(transl)
+//{
+//	mToolsMenu.Translate(transl);
+//}
+//
+//function ToolsMenu::IsCollidingBBox(object)
+//{
+//	return mToolsMenu.IsCollidingBBox(object);
+//}

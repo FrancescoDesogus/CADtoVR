@@ -1,22 +1,33 @@
+#include "ActionsListManager.s3d"
 #include "ToolsMenu.s3d"
 
+/*
+ * This class handles the controller in charge of the menu
+ */
 class MenuController
 {
+	// Reference to the vive controller and its index
 	var mViveController;
 	var mControllerIndex;
+	
+	// Reference to the action controller. Since most of the work is delegated to the Tool objects and this (indirectly) are
+	// managed by the MenuController class, it makes sense to have a reference of the other controller
+	var mActionController;
+	
+	// Reference to the InputManager class
 	var mInputManager;
 	
-	var mPanelDistanceToController;
-	var mToolPanelWidth;
-	var mToolPanelHeight;
-	var mToolPanelDepth;
+	// ToolsMenu object
+	var mToolsMenu;
 	
-	var mToolPanel;
-	
+	// ActionsListManager object that is in charge of the undo/redo mechanism
 	var mActionsListManager;
 	
 	
 	// Public functions
+	UpdateLogic(dt, debugMode);
+	
+	// Common functions
 	Draw();
 	GetObj();
 	GetIndex();
@@ -36,28 +47,33 @@ class MenuController
 	SetScale(x, y, z);
 	IsVisible();
 	IsCollidingBBox(object);
-	
-	UpdateLogic(dt, debugMode, actionController);
 };
 
-
+/*
+ * Constructor
+ * 
+ * viveController: reference to the ViveController object
+ * actionController: reference to the ActionController object
+ * inputManager: reference to the InputManager object
+ */
 function MenuController::MenuController(viveController, actionController, inputManager)
 {
 	mViveController = viveController;
 	mControllerIndex = mViveController.GetIndex();
+	mActionController = actionController;
 	mInputManager = inputManager;
 	
+	// Creating the object that handles undo/redo
 	mActionsListManager = ActionsListManager();
 	
-//	mToolPanel = CreateGlassPlane(1.0 * SCALE_FACTOR, 1.0 * SCALE_FACTOR, 0.02 * SCALE_FACTOR, [1.0, 1.0, 1.0], 0.5);
-//	mToolPanel.Rotate(90, 1, 0, 0);
-
-	mToolPanel = ToolsMenu(mViveController, actionController, mActionsListManager);
-	
-//	mViveController.AddChild(mToolPanel, 0.0, mViveController.GetHeight(), 0.0);
+	// Creating the tool menu object
+	mToolsMenu = ToolsMenu(mViveController, actionController, mActionsListManager);
 }
 
-function MenuController::UpdateLogic(dt, isVRon, actionController)
+/* 
+ * This method updates the menu controller logic and that of the menu
+ */
+function MenuController::UpdateLogic(dt, isVRon)
 {
 	if(!isVRon)
 	{
@@ -115,35 +131,31 @@ function MenuController::UpdateLogic(dt, isVRon, actionController)
 		mViveController.SetPosition(mViveController.GetPosition() + [xOffset, yOffset, zOffset]);
 	}
 	
-//	// I need to check if the action controller is pointing towards the menu
-	var rayOrigin = actionController.GetPosition();
-//	var rayEnd = actionController.GetDirection() * CameraGetCurrent().GetZFar();
 	
 	// Updating the logic of the menu. It will update its position with respect to the controller and will check if 
 	// the action controller intersects the menu
-	mToolPanel.UpdateLogic(dt, actionController);
+	mToolsMenu.UpdateLogic(dt);
 	
 	// If the action controller intersects the tool panel, this method retrieves the contact point (which is void if no intersection is found)
-	var contactPoint = mToolPanel.IsIntersectionFound();
+	var contactPoint = mToolsMenu.IsIntersectionFound();
 	
 	var intersectionWasFound = contactPoint != Void;
 	
 	// In case there was an intersection, I tell the action controller to draw the ray from the controller to the contact point found.
 	// If there wasn't an intersection, I call the method anyway to stop the rendering of the ray, in case it was being drawn before
-	actionController.SetDrawRay(intersectionWasFound, rayOrigin, contactPoint);
+	mActionController.SetDrawRay(intersectionWasFound, contactPoint);
 	
 	if(intersectionWasFound)
 	{
-		if(mInputManager.PrimaryButtonSinglePressed(actionController.GetIndex()))
+		if(mInputManager.PrimaryButtonSinglePressed(mActionController.GetIndex()))
 		{
-			mToolPanel.SelectCurrentHoveredTool();
-			outputln("ASDASD");
+			mToolsMenu.SelectCurrentHoveredTool();
 		}
 	}
 	
 	if(mInputManager.GripSinglePressed(mViveController.GetIndex()))
 	{
-		mToolPanel.DeSelectCurrentTool();
+		mToolsMenu.DeSelectCurrentTool();
 	}
 	
 	if(mInputManager.TouchpadLeftSinglePressed(mViveController.GetIndex()))
@@ -153,9 +165,9 @@ function MenuController::UpdateLogic(dt, isVRon, actionController)
 		
 		
 //	if(mInputManager.TouchpadLeftSinglePressed(mViveController.GetIndex()))
-//		mToolPanel.RotatePanels(true);
+//		mToolsMenu.RotatePanels(true);
 //	else if(mInputManager.TouchpadRightSinglePressed(mViveController.GetIndex()))
-//		mToolPanel.RotatePanels(false);
+//		mToolsMenu.RotatePanels(false);
 //	if(mInputManager.TouchpadLeftSinglePressed(mViveController.GetIndex()))
 //		mAnimator.CreateRotatingTransition(mToolsMenu.GetObj(), 0, -90, [0, 1, 0], 1.0, false, false);
 //	else if(mInputManager.TouchpadRightSinglePressed(mViveController.GetIndex()))
@@ -166,7 +178,7 @@ function MenuController::Draw()
 {
 	mViveController.Draw(VR_NO_CULLING);
 
-	mToolPanel.Draw();
+	mToolsMenu.Draw();
 }
 
 function MenuController::GetObj()
