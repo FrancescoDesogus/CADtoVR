@@ -1,4 +1,7 @@
  
+/*
+ * This classe represents the icon of a given Tool
+ */
 class ToolIcon
 {
 	// Sizes of the icon
@@ -139,6 +142,7 @@ function ToolIcon::SetCollisionRotationMatrix(matrix)
 
 function ToolIcon::Draw()
 {
+	// Disabling the light doesn't have any effects; lights will be used anyway
 	glDisable(GL_LIGHTING);
 	mIcon.Draw();
 	glEnable(GL_LIGHTING);
