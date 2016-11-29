@@ -30,17 +30,16 @@ class Panel
 	// Animator object to create smooth transitions
 	var mAnimator;
 	
-	// When the user is pointing with the action controller over an icon, this variable holds the reference to that icon
+	// When the user is pointing with the action controller over an icon, this variable holds the reference to the tool's icon
 	var mCurrentHoveredTool;
 	
-	// When the user selects an icon with the action controller, this variable holds the reference to that icon
-	var mCurrentSelectedTool;
+	// When the user selects an icon with the action controller, this variable holds the reference to the tool's icon
+	var mCurrentlySelectedTool;
 	
 	var mIsToolSelected;
 	
-	var mSelectedTool;
-	
 	var mActionsListManager;
+	
 	
 	// This method works as the constructor for the class: the classes that will inherit from this class will need to call
 	// this in their constructor as the first call
@@ -50,6 +49,17 @@ class Panel
 	Draw();
 	GetWidth();
 	GetHeight();
+	FindIntersection(rayOrigin, rayEnd);
+	SelectCurrentHoveredTool();
+	DeSelectCurrentTool();
+	GenerateIconsPositions();
+	SetActionAvailable(actionAvailable);
+	
+	// Public functions that need to be overwritten; the classes that will inherit from this class will still need to call
+	// this method in their override function as the first call, to update general things of the panel
+	UpdateLogic(dt, actionController);
+	
+	// Common functions
 	GetObj();
 	AddChild(child, x, y, z);
 	SetPosition(position);
@@ -67,37 +77,29 @@ class Panel
 	IsVisible();
 	IsCollidingBBox(object);
 	IsColliding(rayOrigin, rayEnd, contactPoint);
-	
-	FindIntersection(rayOrigin, rayEnd);
-	SelectCurrentHoveredTool();
-	DeSelectCurrentTool();
-	GenerateIconsPositions();
-	SetActionAvailable(actionAvailable);
-	
-	// Public functions that need to be overwritten; the classes that will inherit from this class will still need to call
-	// this method in their override function as the first call, to update general things of the panel
-	UpdateLogic(dt, actionController);
 };
 
 
 /*
- * This method works as the constructor. It takes as input the string corresponding to the name of the panel and a reference to an
- * Animator object used for animations by the ToolsMenu class
+ * This method works as the constructor. 
+ * 
+ * panelName: string containing the name of the panel
+ * actionController: ActionController reference
+ * animator: Animator reference
+ * actionsListManager: ActionsListManager reference
  */
 function Panel::Init(panelName, actionController, animator, actionsListManager)
 {
 	mActionController = actionController;
 	mAnimator = animator;
-	
 	mActionsListManager = actionsListManager;
 	
-	mCurrentHoveredTool = Void;
-	mCurrentSelectedTool = Void;
-	
+	// Sizes of the panel
 	mToolPanelSilhouetteTickness = 0.02 * SCALE_FACTOR;
 	mToolPanelWidth = 1.0 * SCALE_FACTOR;
 	mToolPanelHeight = 1.0 * SCALE_FACTOR;
 	
+	// Horizzontal range in which the tools' icons need to be placed
 	mMinIconRange = -0.5 * SCALE_FACTOR;
 	mMaxIconRange = 0.5 * SCALE_FACTOR;
 	
@@ -111,8 +113,10 @@ function Panel::Init(panelName, actionController, animator, actionsListManager)
 	// Initializing the array that will hold the icons for the tools. It will be filled up by the class that will inherit this one
 	mTools = {};
 	
+	// No hovered and selected toll at the beginning
+	mCurrentHoveredTool = Void;
+	mCurrentlySelectedTool = Void;
 	mIsToolSelected = false;
-	mSelectedTool = Void;
 }
 
 /*
@@ -157,13 +161,13 @@ function Panel::UpdateLogic(dt, actionController)
 				{
 					var toolIcon = toolRow[j].GetIconObj();
 					
-					if(toolIcon != mSelectedTool.GetIconObj())
+					if(toolIcon != mCurrentlySelectedTool.GetIconObj())
 						toolIcon.Hide();
 				}
 			}
 		}
 		
-		mSelectedTool.UpdateLogic(dt, actionController);
+		mCurrentlySelectedTool.UpdateLogic(dt, actionController);
 	}
 }
 
@@ -267,7 +271,7 @@ function Panel::SelectCurrentHoveredTool()
 		
 		mIsToolSelected = true;
 		
-		mSelectedTool = mCurrentHoveredTool;
+		mCurrentlySelectedTool = mCurrentHoveredTool;
 	}
 	
 	return mIsToolSelected;
@@ -290,7 +294,7 @@ function Panel::DeselectCurrentTool()
 			{
 				var toolIcon = toolRow[j].GetIconObj();
 				
-				if(toolIcon != mSelectedTool)
+				if(toolIcon != mCurrentlySelectedTool)
 				{
 					mAnimator.CreateScalingTransition(toolIcon.GetObj(), toolIcon.GetScale(), {toolIcon.GetScale(), [1, 1, 1]}, 0.2, false, 2);
 					toolIcon.Unhide();
@@ -298,14 +302,14 @@ function Panel::DeselectCurrentTool()
 			}
 		}
 		
-		mSelectedTool.SetToolActive(false);
+		mCurrentlySelectedTool.SetToolActive(false);
 		
-		var hoveredToolIcon = mSelectedTool.GetIconObj();
+		var hoveredToolIcon = mCurrentlySelectedTool.GetIconObj();
 		
 		mAnimator.CreateTransition(hoveredToolIcon, hoveredToolIcon.GetPosition(), hoveredToolIcon.GetDefaultPosition(), 0.3, false, 2);
 		
-		mSelectedTool = Void;
-		mCurrentHoveredTool = mSelectedTool;
+		mCurrentlySelectedTool = Void;
+		mCurrentHoveredTool = mCurrentlySelectedTool;
 	}
 	
 	return mIsToolSelected;
@@ -363,7 +367,7 @@ function Panel::SetActionAvailable(actionAvailable)
 {
 	if(mIsToolSelected)
 	{
-		mSelectedTool.SetActionAvailable(actionAvailable);
+		mCurrentlySelectedTool.SetActionAvailable(actionAvailable);
 	}
 }
 
