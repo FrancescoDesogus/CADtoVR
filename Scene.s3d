@@ -1,4 +1,8 @@
+
+global var globalSkybox;
+
 #include "SkyBox.s3d"
+#include "InteractionManager.s3d"
 
 class Scene
 {
@@ -36,9 +40,11 @@ class Scene
 	var mControllerBeingUsedIndex;
 	
 	
-	var mSkyBox;
+	
 	
 	var mObject;
+	
+	var mInteractionManager;
 
 	// Debug controller when no VR is available; a controller is needed to find collisions with the DrawingConnector objects
 	var mDebugController;
@@ -76,7 +82,7 @@ function Scene::Scene(isVRon, inputManager)
 	if(mIsVRon)
 	{
 		mActionController = ActionController(mInputManager.GetController(2), mInputManager);
-		mMenuController = MenuController(mInputManager.GetController(1), mActionController, mInputManager);
+		mMenuController = MenuController(mInputManager.GetController(1), mInputManager);
 	}
 	else
 	{
@@ -85,12 +91,14 @@ function Scene::Scene(isVRon, inputManager)
 		var viveControllerObj2 = ViveController(2);
 		
 		mActionController = ActionController(viveControllerObj2, mInputManager);
-		mMenuController = MenuController(viveControllerObj1, mActionController, mInputManager);
+		mMenuController = MenuController(viveControllerObj1, mInputManager);
 	}
 	
+	mInteractionManager = InteractionManager(mMenuController, mActionController, mInputManager);
+	
 	// Creating skybox
-	mSkybox = SkyBox();
-	mSkyBox.LoadTextures({"Textures/posx.jpg", "Textures/negx.jpg", "Textures/posz.jpg", "Textures/negz.jpg", "Textures/posy.jpg", "Textures/negy.jpg"});
+	globalSkybox = SkyBox();
+	globalSkybox.LoadTextures({"Textures/posx.jpg", "Textures/negx.jpg", "Textures/posz.jpg", "Textures/negz.jpg", "Textures/posy.jpg", "Textures/negy.jpg"});
 }
 
 
@@ -147,15 +155,21 @@ function Scene::Render()
 	glLight(GL_LIGHT0, GL_POSITION, [mLight0Position.x, mLight0Position.y, mLight0Position.z, 1.0]); 
  	glLight(GL_LIGHT1, GL_POSITION, [mLight1Position.x, mLight1Position.y, mLight1Position.z, 1.0]); 
  	glLight(GL_LIGHT2, GL_POSITION, [mLight2Position.x, mLight2Position.y, mLight2Position.z, 1.0]);
-		
+ 	
+ 	if(!mIsVRon)
+ 		SetClearColor(0.95, 0.95, 0.95);
+	else
+ 		glClearColor(0.95, 0.95, 0.95, 1.0);
+			
 	var cameraPosition = mCamera.GetPosition() - mOpenglTranslationOffset;
 
-	mSkyBox.Render(cameraPosition);
+	globalSkybox.Render(cameraPosition);
 	
 	mObject.Draw();
 	
-	mActionController.Draw();		
-	mMenuController.Draw();
+//	mActionController.Draw();		
+//	mMenuController.Draw();
+	mInteractionManager.Draw();
 }
 
 
@@ -183,8 +197,10 @@ function Scene::UpdateLogic(dt)
 		mActionController.SetPosition(cameraPosition + mCamera.GetDirection() * 3 * SCALE_FACTOR);
 	}
 	
-	mActionController.UpdateLogic(dt, mIsVRon);
-	mMenuController.UpdateLogic(dt, mIsVRon, mActionController);
+//	mActionController.UpdateLogic(dt, mIsVRon);
+//	mMenuController.UpdateLogic(dt, mIsVRon, mActionController);
+
+	mInteractionManager.UpdateLogic(dt, mIsVRon);
 	
 	// To avoid the fact that the icons in the menu panel are changed by lights I put the lights where the player is ALWAYS; temporary fix
 	mLight0Position = cameraPosition;

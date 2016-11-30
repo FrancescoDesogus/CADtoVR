@@ -1,242 +1,114 @@
-//#include "ToolsMenu.s3d"
-//
-//class InteractionManager
-//{
-//	var mViveController;
-//	var mControllerIndex;
-//	var mInputManager;
-//	
-//	var mPanelDistanceToController;
-//	var mToolPanelWidth;
-//	var mToolPanelHeight;
-//	var mToolPanelDepth;
-//	
-//	var mToolPanel;
-//	
-//	
-//	// Public functions
-//	Draw();
-//	GetObj();
-//	GetIndex();
-//	SetActionAvailable(isActionAvailable);
-//	GetControllerTipCoordinates();
-//	GetDirection();
-//	SetPosition(position);
-//	Translate(transl);
-//	GetPosition();
-//	SetRotationMatrix(matrix);
-//	GetRotationMatrix();
-//	Rotate(angle, x, y, z);
-//	SetRotation(angle, x, y, z);
-//	LocalToWorld(point);
-//	Hide();
-//	Unhide();
-//	SetScale(x, y, z);
-//	IsVisible();
-//	IsCollidingBBox(object);
-//	
-//	UpdateLogic(dt, debugMode, actionController);
-//};
-//
-//
-//function InteractionManager::InteractionManager(inputManager)
-//{
-//	mViveController = viveController;
-//	mControllerIndex = mViveController.GetIndex();
-//	mInputManager = inputManager;
-//	
-////	mToolPanel = CreateGlassPlane(1.0 * SCALE_FACTOR, 1.0 * SCALE_FACTOR, 0.02 * SCALE_FACTOR, [1.0, 1.0, 1.0], 0.5);
-////	mToolPanel.Rotate(90, 1, 0, 0);
-//
-//	mToolPanel = ToolsMenu(mViveController, actionController);
-//	
-////	mViveController.AddChild(mToolPanel, 0.0, mViveController.GetHeight(), 0.0);
-//}
-//
-//function InteractionManager::UpdateLogic(dt, isVRon, actionController)
-//{
-//	if(!isVRon)
-//	{
-//		static var rotX = 0;
-//		static var rotY = 0;
-//		static var rotZ = 0;
-//			
-//		if(KeyPressed("F"))
-//			rotX += 1;
-//		
-//		if(KeyPressed("H"))
-//			rotX -= 1;
-//			
-//		if(KeyPressed("T"))
-//			rotY += 1;
-//		
-//		if(KeyPressed("G"))
-//			rotY -= 1;
-//			
-//		if(KeyPressed("R"))
-//			rotZ += 1;
-//		
-//		if(KeyPressed("Y"))
-//			rotZ -= 1;
-//		
-//		mViveController.SetRotation(0, 1, 0, 0);
-//		mViveController.Rotate(rotY, 1, 0, 0);
-//		mViveController.Rotate(rotX, 0, 1, 0);
-//		mViveController.Rotate(rotZ, 0, 0, 1);
-//		
-//		
-//		static var xOffset = 0;
-//		static var yOffset = 0;
-//		static var zOffset = 0;
-//		
-//		if(KeyPressed("L"))
-//			xOffset += 0.05 * SCALE_FACTOR;
-//		
-//		if(KeyPressed("J"))
-//			xOffset -= 0.05 * SCALE_FACTOR;
-//			
-//		if(KeyPressed("I"))
-//			zOffset += 0.05 * SCALE_FACTOR;
-//		
-//		if(KeyPressed("K"))
-//			zOffset -= 0.05 * SCALE_FACTOR;
-//			
-////		if(KeyPressed(VK_NUMPAD1))
-////			yOffset += 1.0 * SCALE_FACTOR;
-////		
-////		if(KeyPressed(VK_RSHIFT))
-////			yOffset -= 1.0 * SCALE_FACTOR;
-////			
-//
-//		mViveController.SetPosition(mViveController.GetPosition() + [xOffset, yOffset, zOffset]);
-//	}
-//	
-////	// I need to check if the action controller is pointing towards the menu
-//	var rayOrigin = actionController.GetPosition();
-////	var rayEnd = actionController.GetDirection() * CameraGetCurrent().GetZFar();
-//	
-//	// Updating the logic of the menu. It will update its position with respect to the controller and will check if 
-//	// the action controller intersects the menu
-//	mToolPanel.UpdateLogic(dt, actionController);
-//	
-//	// If the action controller intersects the tool panel, this method retrieves the contact point (which is void if no intersection is found)
-//	var contactPoint = mToolPanel.IsIntersectionFound();
-//	
-//	var intersectionWasFound = contactPoint != Void;
-//	
-//	// In case there was an intersection, I tell the action controller to draw the ray from the controller to the contact point found.
-//	// If there wasn't an intersection, I call the method anyway to stop the rendering of the ray, in case it was being drawn before
-//	actionController.SetDrawRay(intersectionWasFound, rayOrigin, contactPoint);
-//	
-//	if(intersectionWasFound)
-//	{
-//		if(mInputManager.PrimaryButtonSinglePressed(actionController.GetIndex()))
-//		{
-//			mToolPanel.SelectCurrentHoveredTool();
-//		}
-//	}
-//	
-//	if(mInputManager.GripSinglePressed(actionController.GetIndex()))
-//	{
-//		mToolPanel.DeSelectCurrentTool();
-//	}
-//}
-//
-//function InteractionManager::Draw()
-//{
-//	mViveController.Draw(VR_NO_CULLING);
-//
-//	mToolPanel.Draw();
-//}
-//
-//function InteractionManager::GetObj()
-//{
-//	return mViveController.GetObj();
-////	return mInteractionManager;
-//}
-//
-//function InteractionManager::GetIndex()
-//{
-//	return mControllerIndex;
-//}
-//
-//function InteractionManager::SetActionAvailable(isActionAvailable)
-//{
-//	mViveController.SetActionAvailable(isActionAvailable);
-//}
-//
-//function InteractionManager::GetControllerTipCoordinates()
-//{
-//	return mViveController.GetControllerTipCoordinates();
-//}
-//
-//function InteractionManager::GetDirection()
-//{
-//	return mViveController.GetDirection();
-//}
-//
-//function InteractionManager::SetPosition(position)
-//{
-//	mViveController.SetPosition(position);
-//}
-//
-//function InteractionManager::GetPosition()
-//{
-//	return mViveController.GetPosition();
-//}
-//
-//function InteractionManager::SetRotationMatrix(matrix)
-//{
-//	mViveController.SetRotationMatrix(matrix);
-//}
-//
-//function InteractionManager::GetRotationMatrix()
-//{
-//	return mViveController.GetRotationMatrix();
-//}
-//
-//
-//function InteractionManager::Rotate(angle, x, y, z)
-//{
-//	mViveController.Rotate(angle, x, y, z);
-//}
-//
-//function InteractionManager::SetRotation(angle, x, y, z)
-//{
-//	mViveController.SetRotation(angle, x, y, z);
-//}
-//
-//function InteractionManager::LocalToWorld(point)
-//{
-//	return mViveController.LocalToWorld(point);
-//}
-//
-//function InteractionManager::Hide()
-//{
-//	mViveController.Hide();
-//}
-//
-//function InteractionManager::Unhide()
-//{
-//	mViveController.Unhide();
-//}
-//
-//function InteractionManager::SetScale(x, y, z)
-//{
-//	mViveController.SetScale(x, y, z);
-//}
-//
-//function InteractionManager::IsVisible()
-//{
-//	return mViveController.IsVisible();
-//}
-//
-//function InteractionManager::Translate(transl)
-//{
-//	mViveController.Translate(transl);
-//}
-//
-//function InteractionManager::IsCollidingBBox(object)
-//{
-//	return mViveController.IsCollidingBBox(object);
-//}
+#include "ActionsListManager.s3d"
+#include "ToolsMenu.s3d"
+
+/*
+ * This class handles the interaction part of the application, i.e. the controllers, the menu and the tools
+ */
+class InteractionManager
+{
+	// Reference to the MenuController object
+	var mMenuController;
+	
+	// Reference to the ActionController object
+	var mActionController;
+	
+	// Reference to the InputManager class
+	var mInputManager;
+	
+	// ToolsMenu object
+	var mToolsMenu;
+	
+	// ActionsListManager object that is in charge of the undo/redo mechanism
+	var mActionsListManager;
+	
+	
+	// Public functions
+	UpdateLogic(dt, debugMode);
+	Draw();
+};
+
+/*
+ * Constructor
+ * 
+ * menuController: reference to the MenuController object
+ * actionController: reference to the ActionController object
+ * inputManager: reference to the InputManager object
+ */
+function InteractionManager::InteractionManager(menuController, actionController, inputManager)
+{
+	mMenuController = menuController;
+	mActionController = actionController;
+	mInputManager = inputManager;
+	
+	// Creating the object that handles undo/redo
+	mActionsListManager = ActionsListManager();
+	
+	// Creating the tool menu object
+	mToolsMenu = ToolsMenu(mMenuController, mActionController, mActionsListManager);
+}
+
+/* 
+ * This method updates the controllers, the menu and its tools
+ */
+function InteractionManager::UpdateLogic(dt, isVRon)
+{
+	// Updating the logic of the controllers
+	mActionController.UpdateLogic(dt, isVRon);
+	mMenuController.UpdateLogic(dt, isVRon);
+	
+	// Updating the logic of the menu. It will update its position with respect to the menu controller and 
+	// will check if the action controller intersects the menu
+	mToolsMenu.UpdateLogic(dt);
+	
+	// If the action controller intersects the tool panel, this method retrieves the contact point (which is void if no intersection is found)
+	var contactPoint = mToolsMenu.IsIntersectionFound();
+	
+	var intersectionWasFound = contactPoint != Void;
+	
+	// In case there was an intersection, I tell the action controller to draw the ray from the controller to the contact point found.
+	// If there wasn't an intersection, I call the method anyway to stop the rendering of the ray, in case it was being drawn before
+	mActionController.SetDrawRay(intersectionWasFound, contactPoint);
+	
+	// If there was an intersection I need to check if the action controller's buttons are pressed
+	if(intersectionWasFound)
+	{
+		// If the trigger is pressed, I select the current hovered tool. If the action controller is just pointing the panel
+		// and not hovering any particular tool, this call will have no effect; if a tool in ANOTHER panel was active, it
+		// will deactivate it instead
+		if(mInputManager.PrimaryButtonSinglePressed(mActionController.GetIndex()))
+			mToolsMenu.SelectCurrentHoveredTool();
+	}
+	
+	// If in the menu controller the grip is pressed, it deselects the current tool (if no tool was selected it has no effects)
+	if(mInputManager.GripSinglePressed(mMenuController.GetIndex()))
+		mToolsMenu.DeSelectCurrentTool();
+	
+	// If in the tool menu the touchpad left/right are pressed, it will undo/redo actions
+	if(mInputManager.TouchpadLeftSinglePressed(mMenuController.GetIndex()))
+		mActionsListManager.UndoLastAction();
+	else if(mInputManager.TouchpadRightSinglePressed(mMenuController.GetIndex()))
+		mActionsListManager.RedoLastAction();
+		
+		
+//	if(mInputManager.TouchpadLeftSinglePressed(mMenuController.GetIndex()))
+//		mToolsMenu.RotatePanels(true);
+//	else if(mInputManager.TouchpadRightSinglePressed(mMenuController.GetIndex()))
+//		mToolsMenu.RotatePanels(false);
+//	if(mInputManager.TouchpadLeftSinglePressed(mMenuController.GetIndex()))
+//		mAnimator.CreateRotatingTransition(mToolsMenu.GetObj(), 0, -90, [0, 1, 0], 1.0, false, false);
+//	else if(mInputManager.TouchpadRightSinglePressed(mMenuController.GetIndex()))
+//		mAnimator.CreateRotatingTransition(mToolsMenu.GetObj(), 0, 90, [0, 1, 0], 1.0, false, false);
+}
+
+/*
+ * This method draws the controllers and the tools menu
+ */
+function InteractionManager::Draw()
+{
+	mActionController.Draw();		
+	mMenuController.Draw();
+	
+	// Since the menu are composed of semi-transparent panels, it should be rendered last
+	mToolsMenu.Draw();
+}
+

@@ -4,17 +4,7 @@
  */
 class InfoTool : Tool
 {
-	// Mesh of a note
-	var mNoteMesh;
-	
-	// This CVmObject represent the "preview" note that is put on the tip of the controller
-	var mPreviewNote;
-	
-	// List of currently active notes
-	var mNotesList;
-	
-	// Shader to render the notes
-	var mNotesShader;
+
 	
 	
 	// Public functions
@@ -24,6 +14,7 @@ class InfoTool : Tool
 	
 	// Public inherited functions
 	Draw();
+	SetToolActive(active);
 };
 
 
@@ -44,15 +35,23 @@ function InfoTool::Draw()
 	Tool::this.Draw(); 
 }
 
+function InfoTool::SetToolActive(active)
+{
+	if(mIsToolActive && !active)
+		globalSkybox.RenderingEnabled(true);
+	
+	// Calling the base class method
+	Tool::this.SetToolActive(active); 
+}
 
 /*
  * This method updates the logic behind the tool, but only if it's active
  */
 function InfoTool::UpdateLogic(dt)
 {
-	if(IsToolActive())
+	if(mIsToolActive)
 	{
-
+		globalSkybox.RenderingEnabled(false);
 	}
 }
 

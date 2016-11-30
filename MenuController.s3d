@@ -1,8 +1,8 @@
-#include "ActionsListManager.s3d"
-#include "ToolsMenu.s3d"
+//#include "ActionsListManager.s3d"
+//#include "ToolsMenu.s3d"
 
 /*
- * This class handles the controller in charge of the menu
+ * This class handles the controller the has the menu on it
  */
 class MenuController
 {
@@ -10,19 +10,9 @@ class MenuController
 	var mViveController;
 	var mControllerIndex;
 	
-	// Reference to the action controller. Since most of the work is delegated to the Tool objects and this (indirectly) are
-	// managed by the MenuController class, it makes sense to have a reference of the other controller
-	var mActionController;
-	
 	// Reference to the InputManager class
 	var mInputManager;
-	
-	// ToolsMenu object
-	var mToolsMenu;
-	
-	// ActionsListManager object that is in charge of the undo/redo mechanism
-	var mActionsListManager;
-	
+
 	
 	// Public functions
 	UpdateLogic(dt, debugMode);
@@ -31,6 +21,9 @@ class MenuController
 	Draw();
 	GetObj();
 	GetIndex();
+	GetHeight();
+	GetWidth();
+	GetDepth();
 	SetActionAvailable(isActionAvailable);
 	GetControllerTipCoordinates();
 	GetDirection();
@@ -53,21 +46,13 @@ class MenuController
  * Constructor
  * 
  * viveController: reference to the ViveController object
- * actionController: reference to the ActionController object
  * inputManager: reference to the InputManager object
  */
-function MenuController::MenuController(viveController, actionController, inputManager)
+function MenuController::MenuController(viveController, inputManager)
 {
 	mViveController = viveController;
 	mControllerIndex = mViveController.GetIndex();
-	mActionController = actionController;
 	mInputManager = inputManager;
-	
-	// Creating the object that handles undo/redo
-	mActionsListManager = ActionsListManager();
-	
-	// Creating the tool menu object
-	mToolsMenu = ToolsMenu(mViveController, actionController, mActionsListManager);
 }
 
 /* 
@@ -130,55 +115,11 @@ function MenuController::UpdateLogic(dt, isVRon)
 
 		mViveController.SetPosition(mViveController.GetPosition() + [xOffset, yOffset, zOffset]);
 	}
-	
-	
-	// Updating the logic of the menu. It will update its position with respect to the controller and will check if 
-	// the action controller intersects the menu
-	mToolsMenu.UpdateLogic(dt);
-	
-	// If the action controller intersects the tool panel, this method retrieves the contact point (which is void if no intersection is found)
-	var contactPoint = mToolsMenu.IsIntersectionFound();
-	
-	var intersectionWasFound = contactPoint != Void;
-	
-	// In case there was an intersection, I tell the action controller to draw the ray from the controller to the contact point found.
-	// If there wasn't an intersection, I call the method anyway to stop the rendering of the ray, in case it was being drawn before
-	mActionController.SetDrawRay(intersectionWasFound, contactPoint);
-	
-	if(intersectionWasFound)
-	{
-		if(mInputManager.PrimaryButtonSinglePressed(mActionController.GetIndex()))
-		{
-			mToolsMenu.SelectCurrentHoveredTool();
-		}
-	}
-	
-	if(mInputManager.GripSinglePressed(mViveController.GetIndex()))
-	{
-		mToolsMenu.DeSelectCurrentTool();
-	}
-	
-	if(mInputManager.TouchpadLeftSinglePressed(mViveController.GetIndex()))
-		mActionsListManager.UndoLastAction();
-	else if(mInputManager.TouchpadRightSinglePressed(mViveController.GetIndex()))
-		mActionsListManager.RedoLastAction();
-		
-		
-//	if(mInputManager.TouchpadLeftSinglePressed(mViveController.GetIndex()))
-//		mToolsMenu.RotatePanels(true);
-//	else if(mInputManager.TouchpadRightSinglePressed(mViveController.GetIndex()))
-//		mToolsMenu.RotatePanels(false);
-//	if(mInputManager.TouchpadLeftSinglePressed(mViveController.GetIndex()))
-//		mAnimator.CreateRotatingTransition(mToolsMenu.GetObj(), 0, -90, [0, 1, 0], 1.0, false, false);
-//	else if(mInputManager.TouchpadRightSinglePressed(mViveController.GetIndex()))
-//		mAnimator.CreateRotatingTransition(mToolsMenu.GetObj(), 0, 90, [0, 1, 0], 1.0, false, false);
 }
 
 function MenuController::Draw()
 {
 	mViveController.Draw(VR_NO_CULLING);
-
-	mToolsMenu.Draw();
 }
 
 function MenuController::GetObj()
@@ -190,6 +131,21 @@ function MenuController::GetObj()
 function MenuController::GetIndex()
 {
 	return mControllerIndex;
+}
+
+function MenuController::GetWidth()
+{
+	return mViveController.GetWidth();
+}
+
+function MenuController::GetHeight()
+{
+	return mViveController.GetHeight();
+}
+
+function MenuController::GetDepth()
+{
+	return mViveController.GetDepth();
 }
 
 function MenuController::SetActionAvailable(isActionAvailable)

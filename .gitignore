@@ -56,3 +56,4 @@ CADtoVR.s3d.bin.dbg
 *.dbg
 *.bin
 *.bin
+*.asm
