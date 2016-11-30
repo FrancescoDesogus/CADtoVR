@@ -36,6 +36,7 @@ class ActionController
 	
 	UpdateLogic(dt, debugMode);
 	SetDrawRay(drawRay, rayEnd);
+	IsPressingPrimaryButton();
 	PrimaryButtonSinglePressed();
 };
 
@@ -60,24 +61,30 @@ function ActionController::UpdateLogic(dt, debugMode)
 		static var rotX = 0;
 		static var rotY = 0;
 		static var rotZ = 0;
+		static var multiplier = 1.0;
+		
+		if(KeyPressed(VK_SPACE))
+			multiplier = 0.1;
+		else
+			multiplier = 1.0;
 			
 		if(KeyPressed(VK_NUMPAD4))
-			rotX += 1;
+			rotX += 1 * multiplier;
 		
 		if(KeyPressed(VK_NUMPAD6))
-			rotX -= 1;
+			rotX -= 1 * multiplier;
 			
 		if(KeyPressed(VK_NUMPAD8))
-			rotY += 1;
+			rotY += 1 * multiplier;
 		
 		if(KeyPressed(VK_NUMPAD5))
-			rotY -= 1;
+			rotY -= 1 * multiplier;
 			
 		if(KeyPressed(VK_NUMPAD7))
-			rotZ += 1;
+			rotZ += 1 * multiplier;
 		
 		if(KeyPressed(VK_NUMPAD9))
-			rotZ -= 1;
+			rotZ -= 1 * multiplier;
 		
 		mViveController.SetRotation(0, 1, 0, 0);
 		mViveController.Rotate(rotY, 1, 0, 0);
@@ -87,6 +94,8 @@ function ActionController::UpdateLogic(dt, debugMode)
 		static var xOffset = 0;
 		static var yOffset = 0;
 		static var zOffset = 0;
+		
+
 		
 		
 		if(KeyPressed(VK_RIGHT))
@@ -145,6 +154,11 @@ function ActionController::Draw()
 			glEnd();
 		mDashedLineShader.Stop();
 	}
+}
+
+function ActionController::IsPressingPrimaryButton()
+{
+	return mInputManager.IsPressingPrimaryButton(mViveController.GetIndex());
 }
 
 function ActionController::PrimaryButtonSinglePressed()

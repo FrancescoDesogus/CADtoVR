@@ -1,0 +1,246 @@
+ 
+class ColorPicker
+{
+	var mPanel;
+	
+	var mActionController;
+	
+	var mColorPicker;
+	
+	var mBarWidth;
+	var mBarHeight;
+	
+	var mColorBar;
+	
+	var mIsVisible;
+	
+	var mPreviewBarSelector;
+	var mActualBarSelector;
+	
+	var mActualBarSelectorPos;
+	
+	
+	// Public functions
+	UpdateLogic(dt);
+	
+	Draw();
+	GetObj();
+	GetDirection();
+	SetPosition(position);
+	Translate(transl);
+	GetPosition();
+	SetRotationMatrix(matrix);
+	GetRotationMatrix();
+	Rotate(angle, x, y, z);
+	SetRotation(angle, x, y, z);
+	LocalToWorld(point);
+	SetScale(scale);
+	GetScale();
+	Hide();
+	Unhide();
+	IsVisible();
+};
+
+
+function ColorPicker::ColorPicker(panel, actionController)
+{	
+	mPanel = panel;
+	mActionController = actionController;
+	
+	mBarWidth = 0.1 * SCALE_FACTOR;
+	mBarHeight = 0.7 * SCALE_FACTOR;
+	
+	var barHalfWidth = mBarWidth / 2.0;
+	var barHalfHeight = mBarHeight / 2.0;
+	
+	var barMesh = CVmNewMesh(VRP_PLANE, 1, [-barHalfWidth, -barHalfHeight, 0], [barHalfWidth, barHalfHeight, 0], 2, 2);
+	
+	mColorBar = CVmObj(barMesh);
+	
+	var barMaterial = CVmMaterial();
+	barMaterial.Ambient = [0, 0, 0];
+	barMaterial.Shininess = 0.05;
+	barMaterial.Specular = [0,0,0];
+	barMaterial.SetTexture(CVmTexture("Textures/hueBar.png"));
+	
+	barMesh.SetMaterial(barMaterial);
+	
+	var barSelectorHalfWidth = mBarWidth / 2.0;
+	var barSelectorHalfHeight = 0.01 * SCALE_FACTOR / 2.0;
+	
+	var previewBarSelectorMesh = CVmNewMesh(VRP_PLANE, 1, [-barSelectorHalfWidth, -barSelectorHalfHeight, 0], [barSelectorHalfWidth, barSelectorHalfHeight, 0], 2, 2);
+	
+	var previewBarSelectorMaterial = CVmMaterial();
+	previewBarSelectorMaterial.Ambient = [0, 0, 0];
+	previewBarSelectorMaterial.diffuse = [0.1, 0.1, 0.1];
+	previewBarSelectorMaterial.Specular = [0,0,0];
+	previewBarSelectorMesh.SetMaterial(previewBarSelectorMaterial);
+	
+	mPreviewBarSelector = CVmObj(previewBarSelectorMesh);
+	
+	
+	var barSelectorMesh = CVmNewMesh(VRP_PLANE, 1, [-barSelectorHalfWidth, -barSelectorHalfHeight, 0], [barSelectorHalfWidth, barSelectorHalfHeight, 0], 2, 2);
+	
+	var barSelectorMaterial = CVmMaterial();
+	barSelectorMaterial.Ambient = [0, 0, 0];
+	barSelectorMaterial.diffuse = [0.8, 0.8, 0.8];
+	barSelectorMaterial.Specular = [0,0,0];
+	barSelectorMesh.SetMaterial(barSelectorMaterial);
+	
+	mActualBarSelector = CVmObj(barSelectorMesh);
+	
+//	mColorBar.AddChild(mPreviewBarSelector, 0, 0, 0.001 * SCALE_FACTOR);
+//	mColorBar.AddChild(mActualBarSelector, 0, 0, 0.001 * SCALE_FACTOR);
+
+	mActualBarSelectorPos = Void;
+	
+	mPreviewBarSelector.Hide();
+}
+
+function ColorPicker::UpdateLogic(dt)
+{
+	if(mActualBarSelectorPos == Void)
+		mActualBarSelectorPos = mColorBar.LocalToWorld([0, 0, 0.001 * SCALE_FACTOR]);
+	
+	// Updating the position of the panel with respect to the menu controller
+	mColorBar.SetPosition(mPanel.LocalToWorld([mPanel.GetWidth() / 2.0 - mBarWidth, -0.05 * SCALE_FACTOR, 0.001 * SCALE_FACTOR]));
+	mColorBar.SetRotationMatrix(mPanel.GetRotationMatrix());
+	
+	mPreviewBarSelector.SetPosition(mColorBar.LocalToWorld([0, 0, 0.001 * SCALE_FACTOR]));
+	mPreviewBarSelector.SetRotationMatrix(mPanel.GetRotationMatrix());
+	
+	mActualBarSelector.SetPosition(mActualBarSelectorPos);
+	mActualBarSelector.SetRotationMatrix(mPanel.GetRotationMatrix());
+	
+	var rayOrigin = mActionController.GetPosition();
+	var rayEnd = mActionController.GetDirection() * CameraGetCurrent().GetZFar();
+	
+	var contactPoint;
+	var contactPointNormal;
+		
+	// Now I need to check if the action controller intersects this panel
+	if(mColorBar.IsColliding(rayOrigin, rayEnd, &contactPoint, &contactPointNormal))
+	{
+		mPreviewBarSelector.Unhide();
+		
+		
+//		var newY = contactPointTmp.y - mColorBar.GetPosition().y;
+		var newPos = mPreviewBarSelector.GetPosition();
+		newPos.y = contactPoint.y;
+		newPos.z = contactPoint.z;
+//		mPreviewBarSelector.SetPosition(newPos);
+
+//		var newPos = contactPointTmp;
+//		newPos.x = mPreviewBarSelector.GetPosition().x;
+
+		var direction = Norm(rayOrigin - rayEnd);
+		
+		newPos = newPos - contactPointNormal * 0.01 * SCALE_FACTOR;
+		
+//		mPreviewBarSelector.SetPosition(newPos + direction * 0.01 * SCALE_FACTOR);
+		mPreviewBarSelector.SetPosition(newPos);
+		
+		var topOrigin = mColorBar.LocalToWorld([0, mBarHeight / 2.0, 0.001 * SCALE_FACTOR]);
+		var length = Modulus(newPos - topOrigin);
+	
+		var newValue = (length * 360) / mBarHeight;	
+		
+		
+		if(mActionController.IsPressingPrimaryButton())
+		{
+			mPreviewBarSelector.Hide();
+			mActualBarSelector.Unhide();
+			
+			mActualBarSelectorPos = newPos;
+			
+			var oldPos = mActualBarSelector.GetPosition();
+
+			mActualBarSelector.SetPosition(mActualBarSelectorPos);
+		}
+	}
+	else
+		mPreviewBarSelector.Hide();
+}
+
+function ColorPicker::Draw()
+{
+	mColorBar.Draw();
+	mPreviewBarSelector.Draw();
+	mActualBarSelector.Draw();
+}
+
+
+function ColorPicker::GetObj()
+{
+	return mColorPicker;
+}
+
+function ColorPicker::SetPosition(position)
+{
+	mColorPicker.SetPosition(position);
+}
+
+function ColorPicker::GetPosition()
+{
+	return mColorPicker.GetPosition();
+}
+
+function ColorPicker::SetRotationMatrix(matrix)
+{
+	mColorPicker.SetRotationMatrix(matrix);
+}
+
+function ColorPicker::GetRotationMatrix()
+{
+	return mColorPicker.GetRotationMatrix();
+}
+
+function ColorPicker::Rotate(angle, x, y, z)
+{
+	mColorPicker.RotateAbs(angle, x, y, z);
+}
+
+function ColorPicker::SetRotation(angle, x, y, z)
+{
+	mColorPicker.SetRotation(angle, x, y, z);
+}
+
+function ColorPicker::LocalToWorld(point)
+{
+	return mColorPicker.LocalToWorld(point);
+}
+
+function ColorPicker::SetScale(scale)
+{
+	mColorBar.SetScale(scale);
+	mPreviewBarSelector.SetScale(scale);
+	mActualBarSelector.SetScale(scale);
+}
+
+function ColorPicker::GetScale()
+{
+	return mColorBar.GetScale();
+}
+
+function ColorPicker::Hide()
+{
+//	mColorPicker.Hide();
+	mIsVisible = false;
+}
+
+function ColorPicker::Unhide()
+{
+//	mColorPicker.Unhide();
+	mIsVisible = true;
+}
+
+function ColorPicker::IsVisible()
+{
+	return mIsVisible;
+}
+
+
+function ColorPicker::Translate(transl)
+{
+	mColorPicker.Translate(transl);
+}

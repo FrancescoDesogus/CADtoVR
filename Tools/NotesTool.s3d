@@ -19,6 +19,8 @@ class NotesTool : Tool
 	// Texture for the note object; passed to the shader
 	var mNoteTexture;
 	
+	var mColorPicker;
+	
 	// Public functions
 	UpdateLogic(dt);
 	UndoLastAction(content);
@@ -30,6 +32,7 @@ class NotesTool : Tool
 	
 	// Public inherited functions
 	Draw();
+	SetToolActive(active);
 	SetActionAvailable(isActionAvailable);
 };
 
@@ -44,17 +47,10 @@ function NotesTool::NotesTool(panel, actionController, animator, actionsListMana
 	var noteHalfHeight = 0.5 * SCALE_FACTOR / 2.0;
 	
 	mNoteMesh = CVmNewMesh(VRP_PLANE, 1, [-noteHalfWidth, -noteHalfHeight, 0], [noteHalfWidth, noteHalfHeight, 0], 2, 2);
-	
-//	var postItMaterial = CVmMaterial();
-//	postItMaterial.Ambient = [0, 0, 0];
-//	postItMaterial.Shininess = 0.05;
-//	postItMaterial.Specular = [0,0,0];
-//	postItMaterial.SetTexture(CVmTexture("Textures/postit.png"));
-//	
-//	postItMesh.SetMaterial(postItMaterial);
-	
+
 	mPreviewNote = CVmObj(mNoteMesh);
 	
+	// Initially the scale of the preview note is 0; it will be animated when it appears
 	mPreviewNote.SetScale([0, 0, 0]);
 	
 	mNotesShader = CVmShaderProgram("Shaders/postItShader.glsl");
@@ -62,6 +58,8 @@ function NotesTool::NotesTool(panel, actionController, animator, actionsListMana
 	mNotesList = {};
 	
 	mNoteTexture = CVmTexture("Textures/postit.png");
+	
+	mColorPicker = ColorPicker(mPanel, mActionController);
 }
 
 
@@ -98,6 +96,9 @@ function NotesTool::Draw()
 			note.Draw();
 			
 	mNotesShader.Stop();
+	
+	if(mIsToolActive || (!mIsToolActive && mColorPicker.GetScale().x > 0))
+		mColorPicker.Draw();
 }
 
 /*
@@ -106,6 +107,7 @@ function NotesTool::Draw()
 function NotesTool::UpdateLogic(dt)
 {
 	ManageNotes();
+	mColorPicker.UpdateLogic(dt);
 }
 
 function NotesTool::ManageNotes()
@@ -142,6 +144,16 @@ function NotesTool::ManageNotes()
 	}
 }
 
+function NotesTool::SetToolActive(active)
+{
+	if(!mIsToolActive && active)
+		mAnimator.CreateScalingTransition(mColorPicker, [0, 0, 0], [1.0, 1.0, 1.0], 0.2, false, 2);
+	else if(mIsToolActive && !active)	
+		mAnimator.CreateScalingTransition(mColorPicker, [1, 1, 1], [0.0, 0.0, 0.0], 0.2, false, 2);
+		
+	// Calling the base class method
+	Tool::this.SetToolActive(active); 
+}
 
 /*
  * This method is INHERITED by the base class Tool; I override it in order to play a little animation when the action

@@ -1,3 +1,4 @@
+#include "ColorPicker.s3d"
 #include "Panel.s3d"
 
 #include "SelectionPanel.s3d"
