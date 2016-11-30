@@ -89,7 +89,7 @@ function ColorPicker::ColorPicker(panel, actionController)
 	
 	mActualBarSelector = CVmObj(barSelectorMesh);
 	
-//	mColorBar.AddChild(mPreviewBarSelector, 0, 0, 0.001 * SCALE_FACTOR);
+	mColorBar.AddChild(mPreviewBarSelector, 0, 0, 0.001 * SCALE_FACTOR);
 //	mColorBar.AddChild(mActualBarSelector, 0, 0, 0.001 * SCALE_FACTOR);
 
 	mActualBarSelectorPos = Void;
@@ -106,8 +106,8 @@ function ColorPicker::UpdateLogic(dt)
 	mColorBar.SetPosition(mPanel.LocalToWorld([mPanel.GetWidth() / 2.0 - mBarWidth, -0.05 * SCALE_FACTOR, 0.001 * SCALE_FACTOR]));
 	mColorBar.SetRotationMatrix(mPanel.GetRotationMatrix());
 	
-	mPreviewBarSelector.SetPosition(mColorBar.LocalToWorld([0, 0, 0.001 * SCALE_FACTOR]));
-	mPreviewBarSelector.SetRotationMatrix(mPanel.GetRotationMatrix());
+//	mPreviewBarSelector.SetPosition(mColorBar.LocalToWorld([0, 0, 0.001 * SCALE_FACTOR]));
+//	mPreviewBarSelector.SetRotationMatrix(mPanel.GetRotationMatrix());
 	
 	mActualBarSelector.SetPosition(mActualBarSelectorPos);
 	mActualBarSelector.SetRotationMatrix(mPanel.GetRotationMatrix());
@@ -128,6 +128,7 @@ function ColorPicker::UpdateLogic(dt)
 		var newPos = mPreviewBarSelector.GetPosition();
 		newPos.y = contactPoint.y;
 		newPos.z = contactPoint.z;
+//		newPos.x = mColorBar.LocalToWorld([0, 0, 0.001 * SCALE_FACTOR]).x;
 //		mPreviewBarSelector.SetPosition(newPos);
 
 //		var newPos = contactPointTmp;
@@ -138,13 +139,22 @@ function ColorPicker::UpdateLogic(dt)
 		newPos = newPos - contactPointNormal * 0.01 * SCALE_FACTOR;
 		
 //		mPreviewBarSelector.SetPosition(newPos + direction * 0.01 * SCALE_FACTOR);
-		mPreviewBarSelector.SetPosition(newPos);
+
+//		print({"contactPoint", "mColorBar.GetPosition()"}, {contactPoint, mColorBar.GetPosition()});
+
+//		mPreviewBarSelector.SetPosition(contactPoint - mColorBar.GetPosition());
 		
 		var topOrigin = mColorBar.LocalToWorld([0, mBarHeight / 2.0, 0.001 * SCALE_FACTOR]);
 		var length = Modulus(newPos - topOrigin);
 	
 		var newValue = (length * 360) / mBarHeight;	
 		
+		var old = mPreviewBarSelector.GetPosition();
+		old.y = length - mBarHeight / 2.0;
+		
+		outputln(old);
+		
+		mPreviewBarSelector.SetPosition(old);
 		
 		if(mActionController.IsPressingPrimaryButton())
 		{

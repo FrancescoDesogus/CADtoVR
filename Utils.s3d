@@ -187,6 +187,18 @@ function CreateGlassPlane(width, height, borderThickness, borderColor, glassAlph
 	
 	if(glassAlpha == Void)
 		glassAlpha = 0.5;
+		
+	var totalMesh = CVmNewMesh(VRP_PLANE, 1, [-halfWidth, -halfHeight, 0], [halfWidth, halfHeight, 0], 2, 2);
+	
+	var obj = CVmObj(totalMesh);
+	
+	var objMaterial = CVmMaterial();
+	objMaterial.diffuse = [0, 0, 0];
+	objMaterial.ambient = [0, 0, 0];
+	objMaterial.specular = [0, 0, 0];
+	objMaterial.transparency = 0.0;
+	
+	totalMesh.ForceMaterial(objMaterial);
 	
 	// The glass mesh is smaller than the wall, because it takes into account the borders
 	var glassMesh = CVmNewMesh(VRP_PLANE, 1, [-halfWidth + borderThickness, -halfHeight + borderThickness, 0], [halfWidth - borderThickness, halfHeight - borderThickness, 0], 2, 2);
@@ -239,6 +251,8 @@ function CreateGlassPlane(width, height, borderThickness, borderColor, glassAlph
 	glassWallObj.AddChild(topBorderObj, 0, halfHeight - halfThickness, 0);
 	glassWallObj.AddChild(bottomBorderObj, 0, -halfHeight + halfThickness, 0);
 	
+	obj.AddChild(glassWallObj, 0, 0, 0);
+	
 	// Adding the silhouette lines to the wall where the borders are, using a very low z offset to avoid Z fighting but at the same time making
 	// it look like they're attached to the wall
 //	glassWallObj.AddChild(outerSilhouetteLeft, halfWidth, 0, -0.003 * SCALE_FACTOR);
@@ -246,5 +260,6 @@ function CreateGlassPlane(width, height, borderThickness, borderColor, glassAlph
 //	glassWallObj.AddChild(outerSilhouetteTop, 0, halfHeight - silhouetteLineHalfWidth, -0.003 * SCALE_FACTOR);
 //	glassWallObj.AddChild(outerSilhouetteBottom, 0, -halfHeight + silhouetteLineHalfWidth, -0.003 * SCALE_FACTOR);
 	
-	return glassWallObj;
+//	return glassWallObj;
+	return obj;
 }

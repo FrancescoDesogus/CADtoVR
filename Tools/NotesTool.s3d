@@ -72,12 +72,12 @@ function NotesTool::Draw()
 	Tool::this.Draw(); 
 	
 	// Activating the texture. This is the only way I managed to pass the texture to the shader
-	SetActiveTexture(mNoteTexture, VR_NO_FILTER, 0);
+	SetActiveTexture(mNoteTexture, VR_NO_FILTER, 5);
 
 	// Activating shader and passing the reference to its texture
 	mNotesShader.Start();
 		// I pass the texture to the shader via the id I used in the SetActiveTexture() call above
-		mNotesShader.SetParameter("tex", 0);
+		mNotesShader.SetParameter("tex", 5);
 		
 		// If there is an action available (this also implies that the tool is selected) I draw the preview note.
 		// Since when the action is not available anymore (i.e. the user is pointing the menu) I play a little scaling animation,
