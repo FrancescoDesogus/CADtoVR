@@ -90,7 +90,7 @@ function ColorPicker::ColorPicker(panel, actionController)
 	mActualBarSelector = CVmObj(barSelectorMesh);
 	
 	mColorBar.AddChild(mPreviewBarSelector, 0, 0, 0.001 * SCALE_FACTOR);
-//	mColorBar.AddChild(mActualBarSelector, 0, 0, 0.001 * SCALE_FACTOR);
+	mColorBar.AddChild(mActualBarSelector, 0, 0, 0.001 * SCALE_FACTOR);
 
 	mActualBarSelectorPos = Void;
 	
@@ -106,12 +106,6 @@ function ColorPicker::UpdateLogic(dt)
 	mColorBar.SetPosition(mPanel.LocalToWorld([mPanel.GetWidth() / 2.0 - mBarWidth, -0.05 * SCALE_FACTOR, 0.001 * SCALE_FACTOR]));
 	mColorBar.SetRotationMatrix(mPanel.GetRotationMatrix());
 	
-//	mPreviewBarSelector.SetPosition(mColorBar.LocalToWorld([0, 0, 0.001 * SCALE_FACTOR]));
-//	mPreviewBarSelector.SetRotationMatrix(mPanel.GetRotationMatrix());
-	
-	mActualBarSelector.SetPosition(mActualBarSelectorPos);
-	mActualBarSelector.SetRotationMatrix(mPanel.GetRotationMatrix());
-	
 	var rayOrigin = mActionController.GetPosition();
 	var rayEnd = mActionController.GetDirection() * CameraGetCurrent().GetZFar();
 	
@@ -123,36 +117,19 @@ function ColorPicker::UpdateLogic(dt)
 	{
 		mPreviewBarSelector.Unhide();
 		
-		
-//		var newY = contactPointTmp.y - mColorBar.GetPosition().y;
 		var newPos = mPreviewBarSelector.GetPosition();
 		newPos.y = contactPoint.y;
 		newPos.z = contactPoint.z;
-//		newPos.x = mColorBar.LocalToWorld([0, 0, 0.001 * SCALE_FACTOR]).x;
-//		mPreviewBarSelector.SetPosition(newPos);
-
-//		var newPos = contactPointTmp;
-//		newPos.x = mPreviewBarSelector.GetPosition().x;
 
 		var direction = Norm(rayOrigin - rayEnd);
 		
-		newPos = newPos - contactPointNormal * 0.01 * SCALE_FACTOR;
-		
-//		mPreviewBarSelector.SetPosition(newPos + direction * 0.01 * SCALE_FACTOR);
-
-//		print({"contactPoint", "mColorBar.GetPosition()"}, {contactPoint, mColorBar.GetPosition()});
-
-//		mPreviewBarSelector.SetPosition(contactPoint - mColorBar.GetPosition());
-		
 		var topOrigin = mColorBar.LocalToWorld([0, mBarHeight / 2.0, 0.001 * SCALE_FACTOR]);
-		var length = Modulus(newPos - topOrigin);
+		var length = Modulus(contactPoint - topOrigin);
 	
 		var newValue = (length * 360) / mBarHeight;	
 		
 		var old = mPreviewBarSelector.GetPosition();
-		old.y = length - mBarHeight / 2.0;
-		
-		outputln(old);
+		old.y = mBarHeight / 2.0 - length;
 		
 		mPreviewBarSelector.SetPosition(old);
 		
@@ -160,12 +137,8 @@ function ColorPicker::UpdateLogic(dt)
 		{
 			mPreviewBarSelector.Hide();
 			mActualBarSelector.Unhide();
-			
-			mActualBarSelectorPos = newPos;
-			
-			var oldPos = mActualBarSelector.GetPosition();
 
-			mActualBarSelector.SetPosition(mActualBarSelectorPos);
+			mActualBarSelector.SetPosition(old);
 		}
 	}
 	else
@@ -175,8 +148,6 @@ function ColorPicker::UpdateLogic(dt)
 function ColorPicker::Draw()
 {
 	mColorBar.Draw();
-	mPreviewBarSelector.Draw();
-	mActualBarSelector.Draw();
 }
 
 
@@ -223,8 +194,6 @@ function ColorPicker::LocalToWorld(point)
 function ColorPicker::SetScale(scale)
 {
 	mColorBar.SetScale(scale);
-	mPreviewBarSelector.SetScale(scale);
-	mActualBarSelector.SetScale(scale);
 }
 
 function ColorPicker::GetScale()

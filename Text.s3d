@@ -41,6 +41,7 @@ class Text
 	GetPosition();
 	GetWidthOfLine(lineNumber);
 	GetFontHeight();
+	SetColor(color);
 	GetScale();
 	GetObj();
 	GetRotationMatrix();
@@ -246,6 +247,14 @@ function Text::GetWidthOfLine(lineNumber)
 function Text::GetFontHeight()
 {
 	return mStringHeight;
+}
+
+function Text::SetColor(color)
+{
+	mColor = color;
+	
+	foreach(var txt in mStringList)
+		txt.SetColor(mColor.r, mColor.g, mColor.b);
 }
 
 function Text::GetScale()

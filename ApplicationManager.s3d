@@ -4,6 +4,10 @@ global var SCALE_FACTOR = 0.2;
 #include "Utils.s3d"
 #include "Text.s3d"
 #include "Animator.s3d"
+#include "MessagePrinter.s3d"
+
+global var globalMessagePrinter;
+
 #include "ViveController.s3d"
 #include "MenuController.s3d"
 #include "ActionController.s3d"
@@ -103,6 +107,7 @@ class ApplicationManager
 	
 	// Index of the controller being used for the teleportation
 	var mControllerBeingUsedIndex;
+	
 
 	// Private methods
 	XVRRendering(eye);
@@ -224,6 +229,8 @@ function ApplicationManager::ApplicationManager(HMD)
 	
 	mIsTeleporting = false;
 	mTeleportDistanceThreshold = 30.0 * SCALE_FACTOR;
+	
+	globalMessagePrinter = MessagePrinter();
 }
 
 /*
@@ -394,6 +401,9 @@ function ApplicationManager::XVRRendering(eye)
 	// Drawing the crosshair and everything that is 2D after I'm finished with the 3D stuff, but only if the VR isn't on
 	if(!mIsVRon)
 		DrawCrosshair();
+		
+	globalMessagePrinter.Draw();
+		
 		
 	// If there is a fade transition going on or the level is ending I fade to black the screen (I check if the level is ending so that when it is
 	// and the animation of fading to black is over, the screen keeps being black)

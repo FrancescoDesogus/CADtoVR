@@ -1,0 +1,225 @@
+ 
+ /*
+  * Utility class that prints strings nad values to a console drawn as HUD in the application. Because of this,
+  * the draw method of the class should be called after all 3D rendering is done
+  */
+class MessagePrinter
+{
+	// 2D plane object in which the text is displayed
+	var mConsole;
+	
+	// Sizes for the console
+	var mConsoleWidth;
+	var mConsoleHeight;
+	
+	// Array containing Text objects with the actual text
+	var mTexts;
+	
+	// Maximum number of lines available at one time in the console
+	var mMaxStrings;
+	
+	// This variable holds the used size of the text array
+	var mTextsArraySize;
+	
+	// Variable that is true if the console is visible
+	var mIsVisible;
+	
+	// Public functions
+	Draw();
+	PrintText(string, value, color);
+	Hide();
+	Unhide();
+	IsVisible();
+};
+
+/*
+ * Constructor
+ */
+function MessagePrinter::MessagePrinter()
+{
+	// To draw the console I create a orthographic projection that has as size range [-1, -1] to [1, 1], meaning that the 
+	// values of the objects drawn has to be inside this range to be inside the screen. So the size of the console is given
+	// in this term (for example, a vlaue of 1 for the width is half the screen)
+	mConsoleWidth = 0.7;
+	mConsoleHeight = 0.5;
+	
+	// Creating the console object with the Util faction
+	mConsole = CreateGlassPlane(mConsoleWidth, mConsoleHeight, 0.01 * SCALE_FACTOR, [0.5, 0.5, 0.5], 0.5);
+	
+	// Setting the console position on the bottom left part of the screen
+	mConsole.SetPosition(-1 + mConsoleWidth / 2.0 + 0.05, -1 + mConsoleHeight / 2.0 + 0.05, 0);
+//	mConsole.SetPosition(1 - mConsoleWidth / 2.0 - 0.05, -1 + mConsoleHeight / 2.0 + 0.05, 0);
+		
+	mMaxStrings = 16;
+	
+	mIsVisible = true;
+	
+	mTexts = {};
+
+	mTextsArraySize = 0;
+	
+	// To avoid adding elements on the screen at runtime, since I know that there will be at most mMaxStrings
+	// elements, I pre-allocate them with empty text
+	for(var i = 0; i < mMaxStrings; i++)
+		aadd(mTexts, Text("", 0.3, [1, 1, 1]));
+}
+
+/*
+ * This method prints a string in the console. There are many ways to use this function, depending on the parameters
+ * 
+ * string: this parameter can be
+ * 		   1) a string
+ * 		   2) an array of strings; in this case to each string will be associated a "value" parameter, if there is one
+ * 		   3) anything else. In this case the other parameters (value and color) will not be considered
+ * value: (optional) this parameter can be anything, and its value will be associated to the string parameter
+ * color: (optional) this parameter sets the color for the string
+ */
+function MessagePrinter::PrintText(string, value, color)
+{
+	var textColor;
+	
+	// If the color was passed as parameter, I use it
+	if(color == Void)
+		textColor = [1, 1, 1];
+	else
+		textColor = color;
+	
+	// This variable will contain the resulting string. First I need to compose it
+	var newString = "";
+	
+	// If the string parameter isn't an array, things are easier
+	if(valtype(string) != "A")
+	{
+		var newValueString = "";
+		
+		// If the string parameter isn't actually a string, I convert its value to a string and that will be printed
+		if(valtype(string) != "S")
+		{
+			newValueString = ConvertValueToString(string);
+			newString = newValueString;
+		}
+		// If the string type IS a string, I check the value parameter
+		else
+		{
+			// If the value parameter exists, I convert its value to a string
+			if(value != Void)
+				newValueString = ConvertValueToString(value);
+				
+			// I compose the new string
+			newString = string + ": " + newValueString;
+		}
+	}
+	// If the string parameter is an array, I consider it to be an array of strings and I expect the "value" parameter to
+	// be an array that has as many elements as the array "string". In this case to each string I associate one value
+	else
+	{
+		for(var i = 0; i < len(string); i++)
+		{
+			var newValueString = " ";
+	
+			if(value[i] != Void)
+				newValueString = ConvertValueToString(value[i]);
+		
+			newString += string[i] + ": " + newValueString + "; ";
+		}
+	}
+	
+	// Now that we have the new string, we have to assign it to a Text object. There are 2 cases. Since at first I pre-allocated
+	// theT Text objects in the array, I need to check if I use everyone of them for the first time or not.
+	// This is the case where I already used every pre-allocated Text object at least once
+	if(mTextsArraySize == mMaxStrings)
+	{
+		// Since I'm always re-using Text objects, I change the oldest text (which is always the first one in the array)
+		var oldestText = mTexts[0];
+		
+		// I set the new string and the color
+		oldestText.LoadString(newString);
+		oldestText.SetColor(textColor);
+		
+		// Now I rotate the array (shift it to the right), meaning that every element will shift to the position on its right,
+		// so that the oldest element in the array (the first one) becomes the last one
+		RotateArrayByOne(mTexts);
+		
+		// Now I iterate over all the Text objects and I compute again their position, with respect to their position in the array
+		for(var i = 0; i < len(mTexts); i++)
+		{
+			var txt = mTexts[i];
+			
+			// To compute the position I take as reference the console object, and I compute the y by looking at 
+			// the position in the array of this particular Text object
+			var newPos = mConsole.GetPosition();
+			newPos.x = newPos.x - mConsoleWidth / 2.0 + txt.GetWidthOfLine(0) + 0.01;
+			newPos.y = newPos.y + mConsoleHeight / 2.0 - (txt.GetFontHeight()) * (i + 1);
+			
+			// Finally I can set the position
+			txt.SetPosition(newPos);
+		}
+	}
+	// If I didn't use all the pre-allocated objects yet, don't need to rotate the array and stuff. I just take the last
+	// element in the array, change its text and color and position it
+	else
+	{
+		var newText = mTexts[mTextsArraySize];
+		newText.SetColor(textColor);
+		
+		var newPos = mConsole.GetPosition();
+		newPos.x = newPos.x - mConsoleWidth / 2.0 + newText.GetWidthOfLine(0) + 0.01;
+		newPos.y = newPos.y + mConsoleHeight / 2.0 - (newText.GetFontHeight()) * (len(mTexts) + 1);
+		
+		newText.SetPosition(newPos);
+		
+		mTextsArraySize++;
+	}
+}
+
+/*
+ * This method draws the console as HUD
+ */
+function MessagePrinter::Draw()
+{
+	var viewport = array(4);
+	viewport = glget(GL_VIEWPORT);
+	
+	glClear(GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, viewport[2], viewport[4], 0, -1, 1);
+//	glOrtho(0, viewport[2], viewport[3], 0, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    
+    
+    glEnable(GL_BLEND);
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    
+    glDisable(GL_LIGHTING);
+
+	foreach(var txt in mTexts)
+		txt.Draw();
+	
+	mConsole.Draw();
+	
+	glMatrixMode(GL_PROJECTION);
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+	
+	glEnable( GL_LIGHTING );
+}
+
+function MessagePrinter::Hide()
+{
+	mConsole.Hide();
+	mIsVisible = false;
+}
+
+function MessagePrinter::Unhide()
+{
+	mConsole.Unhide();
+	mIsVisible = true;
+}
+
+function MessagePrinter::IsVisible()
+{
+	return mIsVisible;
+}

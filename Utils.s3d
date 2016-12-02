@@ -2,7 +2,7 @@ function Print(strings, objects)
 {
 	if(valtype(strings) == "A")
 	{
-			output(strings[0] + ": ");
+		output(strings[0] + ": ");
 		output(objects[0]);
 		
 		for(var i = 1; i < len(strings); i++)
@@ -58,6 +58,67 @@ function PrintDebugBox(strings, objects)
 	ConsoleFont("Arial", 20);
 	ConsoleText(0.40, 0.9, totalText);
 	
+}
+
+/*
+ * This function converts the given value to a string, which is then returned.
+ * The value given as parameter can be everything except an Object; in this case it will be ignored and an empty string
+ * will be returned
+ */
+function ConvertValueToString(value)
+{
+	var newValueString = "";
+	
+	// For every possible type I need to compose the string
+	if(valtype(value) == "I")
+		newValueString += sprintf("%d", value);
+	else if(valtype(value) == "R")
+		newValueString += sprintf("%.3f", value);
+	else if(valtype(value) == "B")
+		newValueString += value ? "true" : "false";
+	else if(valtype(value) == "S")
+		newValueString += sprintf("%s", value);
+	else if(valtype(value) == "V")
+	{
+		newValueString += "[";
+		newValueString += ConvertValueToString(value.x) + ", ";
+		newValueString += ConvertValueToString(value.y) + ", ";
+		newValueString += ConvertValueToString(value.z);
+		newValueString += "]";
+	}
+	// If the value is an array, I recursively convert it to a string
+	else if(valtype(value) == "A")
+	{
+		newValueString += "{";
+		
+		for(var i = 0; i < len(value); i++)
+			newValueString += ConvertValueToString(value[i]) + (i < len(value) - 1 ? ", " : "");
+		
+		newValueString += "}";
+	}
+	// If a type that wasn't allowed is passed, I print an error on the console
+	else
+		Print("Couldn't convert value to string: ", value);
+		
+	return newValueString;
+}
+
+/*
+ * This function rotates (or "shifts") the given array to the right. 
+ * For example if the given array is {1, 2, 3, 4}, the result will be {2, 3, 4, 1}
+ */
+function RotateArrayByOne(arr) 
+{
+	// I hold on to the first element, which will be the last
+	var firstElement = arr[0];
+
+	// For each element, take the one next to you: I do this until I reach the second to last
+	for(var i = 0; i < len(arr) - 1; i++) 
+
+    	arr[i] = arr[i+1];
+    	
+	// Now I manually add the last element, which was the first
+	arr[len(arr) - 1] = firstElement;
 }
 
 /*
@@ -187,17 +248,19 @@ function CreateGlassPlane(width, height, borderThickness, borderColor, glassAlph
 	
 	if(glassAlpha == Void)
 		glassAlpha = 0.5;
-		
-	var totalMesh = CVmNewMesh(VRP_PLANE, 1, [-halfWidth, -halfHeight, 0], [halfWidth, halfHeight, 0], 2, 2);
 	
+	// This is the mesh for the whole plane and the obj that will contain the whole thing. I insert everything as child
+	// of this object in order to make the IsColliding() method work properly with every part of the plane
+	var totalMesh = CVmNewMesh(VRP_PLANE, 1, [-halfWidth, -halfHeight, 0], [halfWidth, halfHeight, 0], 2, 2);
 	var obj = CVmObj(totalMesh);
 	
+	// I don't want the global object to be seen, but I can't simply hide it otherwise it will hide every child;
+	// so I create a transparent material for it
 	var objMaterial = CVmMaterial();
 	objMaterial.diffuse = [0, 0, 0];
 	objMaterial.ambient = [0, 0, 0];
 	objMaterial.specular = [0, 0, 0];
 	objMaterial.transparency = 0.0;
-	
 	totalMesh.ForceMaterial(objMaterial);
 	
 	// The glass mesh is smaller than the wall, because it takes into account the borders
@@ -251,15 +314,8 @@ function CreateGlassPlane(width, height, borderThickness, borderColor, glassAlph
 	glassWallObj.AddChild(topBorderObj, 0, halfHeight - halfThickness, 0);
 	glassWallObj.AddChild(bottomBorderObj, 0, -halfHeight + halfThickness, 0);
 	
+	// Adding the whole thing as child of the total object
 	obj.AddChild(glassWallObj, 0, 0, 0);
 	
-	// Adding the silhouette lines to the wall where the borders are, using a very low z offset to avoid Z fighting but at the same time making
-	// it look like they're attached to the wall
-//	glassWallObj.AddChild(outerSilhouetteLeft, halfWidth, 0, -0.003 * SCALE_FACTOR);
-//	glassWallObj.AddChild(outerSilhouetteRight, -halfWidth, 0, -0.003 * SCALE_FACTOR);
-//	glassWallObj.AddChild(outerSilhouetteTop, 0, halfHeight - silhouetteLineHalfWidth, -0.003 * SCALE_FACTOR);
-//	glassWallObj.AddChild(outerSilhouetteBottom, 0, -halfHeight + silhouetteLineHalfWidth, -0.003 * SCALE_FACTOR);
-	
-//	return glassWallObj;
 	return obj;
 }
