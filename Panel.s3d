@@ -80,7 +80,7 @@ class Panel
 	SetScale(x, y, z);
 	IsVisible();
 	IsCollidingBBox(object);
-	IsColliding(rayOrigin, rayEnd, contactPoint);
+	IsColliding(rayOrigin, rayEnd, contactPoint, contactNormal);
 };
 
 
@@ -112,7 +112,7 @@ function Panel::Init(panelName, actionController, animator, actionsListManager)
 	
 	// Text with the name of the panel
 	mPanelName = Text(panelName, 0.3, [1, 1, 1]);
-	mPanel.AddChild(mPanelName.GetObj(), -0.05 * SCALE_FACTOR, mToolPanelHeight / 2.0 - mPanelName.GetFontHeight(), 0.01 * SCALE_FACTOR);
+	mPanel.AddChild(mPanelName.GetObj(), -0.05 * SCALE_FACTOR, mToolPanelHeight / 2.0 - mPanelName.GetFontHeight(), 0.001 * SCALE_FACTOR);
 
 	// Initializing the array that will hold the icons for the tools. It will be filled up by the class that will inherit this one
 	mTools = {};
@@ -274,7 +274,7 @@ function Panel::SelectCurrentHoveredTool()
 		mAnimator.CreateScalingTransition(hoveredToolIcon.GetObj(), hoveredToolIcon.GetScale(), [1, 1, 1], 0.2, false, 2);	
 		
 		// I create a transition to bring the icon up
-		var endPos = [-GetWidth() / 2.0 + hoveredToolIcon.GetWidth(), GetHeight() / 2.0 - hoveredToolIcon.GetHeight(), 0.01 * SCALE_FACTOR];	
+		var endPos = [-GetWidth() / 2.0 + hoveredToolIcon.GetWidth(), GetHeight() / 2.0 - hoveredToolIcon.GetHeight(), 0.001 * SCALE_FACTOR];	
 		mAnimator.CreateTransition(hoveredToolIcon, hoveredToolIcon.GetPosition(), endPos, 0.3, false, 2);
 		
 		// I save the fact that in this panel a tool is active
@@ -377,9 +377,9 @@ function Panel::GenerateIconsPositions()
 			var y = initialYoffset - (toolIcon.GetHeight() + 0.05 * SCALE_FACTOR) * i;
 
 			// Finally, I can set the position and orientation of the icon
-			toolIcon.SetDefaultPosition([x, y, 0.01 * SCALE_FACTOR]);
+			toolIcon.SetDefaultPosition([x, y, 0.001 * SCALE_FACTOR]);
 			
-			mPanel.AddChild(toolIcon.GetObj(), x, y, 0.01 * SCALE_FACTOR);
+			mPanel.AddChild(toolIcon.GetObj(), x, y, 0.001 * SCALE_FACTOR);
 		}
 	}
 }
@@ -411,9 +411,9 @@ function Panel::GetHeight()
 	return mToolPanelHeight + mToolPanelSilhouetteTickness;
 }
 
-function Panel::IsColliding(rayOrigin, rayEnd, contactPoint)
+function Panel::IsColliding(rayOrigin, rayEnd, contactPoint, contactNormal)
 {
-	return mPanel.IsColliding(rayOrigin, rayEnd, &contactPoint);
+	return mPanel.IsColliding(rayOrigin, rayEnd, &contactPoint, &contactNormal);
 }
 
 function Panel::GetObj()

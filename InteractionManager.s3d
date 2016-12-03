@@ -60,24 +60,27 @@ function InteractionManager::UpdateLogic(dt, isVRon)
 	// will check if the action controller intersects the menu
 	mToolsMenu.UpdateLogic(dt);
 	
-	// If the action controller intersects the tool panel, this method retrieves the contact point (which is void if no intersection is found)
-	var contactPoint = mToolsMenu.IsIntersectionFound();
+	// If the action controller intersects the tool panel, this method retrieves an array containing at the first position
+    // the actual contact point and at the second the normal; if no intersection was found, it returns Void
+	var contactInfo = mToolsMenu.IsIntersectionFound();
 	
-	var intersectionWasFound = contactPoint != Void;
-	
-	// In case there was an intersection, I tell the action controller to draw the ray from the controller to the contact point found.
-	// If there wasn't an intersection, I call the method anyway to stop the rendering of the ray, in case it was being drawn before
-	mActionController.SetDrawRay(intersectionWasFound, contactPoint);
+	var intersectionWasFound = contactInfo != Void;
 	
 	// If there was an intersection I need to check if the action controller's buttons are pressed
 	if(intersectionWasFound)
 	{
+		// In case there was an intersection, I tell the action controller to draw the ray from the controller to the contact point found.
+		mActionController.SetDrawRay(intersectionWasFound, contactInfo[0], contactInfo[1]);
+		
 		// If the trigger is pressed, I select the current hovered tool. If the action controller is just pointing the panel
 		// and not hovering any particular tool, this call will have no effect; if a tool in ANOTHER panel was active, it
 		// will deactivate it instead
 		if(mInputManager.PrimaryButtonSinglePressed(mActionController.GetIndex()))
 			mToolsMenu.SelectCurrentHoveredTool();
 	}
+	// If there wasn't an intersection, I call the method anyway to stop the rendering of the ray, in case it was being drawn before
+	else
+		mActionController.SetDrawRay(intersectionWasFound);
 	
 	// If in the menu controller the grip is pressed, it deselects the current tool (if no tool was selected it has no effects)
 	if(mInputManager.GripSinglePressed(mMenuController.GetIndex()))
@@ -105,8 +108,10 @@ function InteractionManager::UpdateLogic(dt, isVRon)
  */
 function InteractionManager::Draw()
 {
-	mActionController.Draw();		
+//	glDepthMask(GL_FALSE);
 	mMenuController.Draw();
+	mActionController.Draw();	
+//	glDepthMask(GL_TRUE);
 	
 	// Since the menu are composed of semi-transparent panels, it should be rendered last
 	mToolsMenu.Draw();

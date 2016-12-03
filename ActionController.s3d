@@ -6,11 +6,16 @@ class ActionController
 	
 	var mInputManager;
 	
+	var mMenuRayColor;
 	var mRayEnd;
 	var mDrawRay;
 	
 	var mDashedLineShader;
 	var mDashedLinesOffset;
+	
+	var mPointingCircle;
+	
+	var mAnimator;
 	
 	
 	// Public functions
@@ -35,7 +40,7 @@ class ActionController
 	IsCollidingBBox(object);
 	
 	UpdateLogic(dt, debugMode);
-	SetDrawRay(drawRay, rayEnd);
+	SetDrawRay(drawRay, rayEnd, contactNormal);
 	IsPressingPrimaryButton();
 	PrimaryButtonSinglePressed();
 };
@@ -47,11 +52,28 @@ function ActionController::ActionController(viveController, inputManager)
 	mControllerIndex = mViveController.GetIndex();
 	mInputManager = inputManager;
 	
+//	mMenuRayColor = [0.41, 0.8, 0.36];
+	mMenuRayColor = [0.71, 0.8, 0.66];
 	mRayEnd = [0, 0, 0];
 	mDrawRay = false;
 	
+	var pointingCircleMesh = CVmNewMesh(VRP_CIRCLE, 30, 0.04 * SCALE_FACTOR, 1); 
+
+	var pointingCircleMaterial = CVmMaterial();
+	pointingCircleMaterial.Ambient = [0, 0, 0];
+	pointingCircleMaterial.diffuse = mMenuRayColor;
+	pointingCircleMaterial.Specular = [0, 0, 0];
+	pointingCircleMaterial.SetTexture(CVmTexture("Textures/selectionCircle.png"));
+	pointingCircleMesh.SetMaterial(pointingCircleMaterial);
+	
+	mPointingCircle = CVmObj(pointingCircleMesh);
+	
 	mDashedLineShader = CVmShaderProgram("Shaders/dashedLineShader.glsl");
 	mDashedLinesOffset = 0;
+	
+	mAnimator = Animator();
+	
+	mAnimator.CreateScalingTransition(mPointingCircle, [0.6, 0.6, 0.6], [1.0, 1.0, 1.0], 0.7, true, 3);
 }
 
 function ActionController::UpdateLogic(dt, debugMode)
@@ -120,12 +142,32 @@ function ActionController::UpdateLogic(dt, debugMode)
 	}
 	
 	mDashedLinesOffset += 0.001;
+	
+	mAnimator.UpdateTransitions(dt);
 }
 
-function ActionController::SetDrawRay(drawRay, rayEnd)
+function ActionController::SetDrawRay(drawRay, rayEnd, contactNormal)
 {
 	mDrawRay = drawRay;
-	mRayEnd = rayEnd;
+	
+	if(mDrawRay)
+	{
+		mRayEnd = rayEnd;
+		
+		mPointingCircle.SetPosition(mRayEnd - contactNormal * 0.002 * SCALE_FACTOR);
+		
+		// Now I need to rotate the circle to face the normal vector, so that it points in the right direction.
+		// To compute the angle around which to rotate the object, I compute the cross product between this vector and the up vector (the vector
+		// that tells me which way is up); the result will be a vector perpendicular to the 2, which I normalize to use it as a normal.
+		// I then switch sign, otherwise it turns on the opposite side
+		var axis = -Norm(contactNormal ^ [0, 1, 0]);
+		
+		// I now compute the angle for the rotation. The formula derives from "easy" trigonometry (lookup "finding angle between 2 vectors").
+		// I'm not sure why the final angle is shifted by 180 degrees; that's why I subtract 180
+		var angle = acos(contactNormal * [0, 1, 0]) * RAD_TO_GRAD - 180; 
+		
+		mPointingCircle.SetRotation(angle, axis.x, axis.y, axis.z);
+	}
 }
 
 function ActionController::Draw()
@@ -141,7 +183,7 @@ function ActionController::Draw()
 			// Parameters for the ray's shader
 			mDashedLineShader.SetParameter("sourcePosition", rayOrigin);
 			mDashedLineShader.SetParameter("lineLength", Modulus(mRayEnd - rayOrigin));
-			mDashedLineShader.SetParameter("color", [0.7, 0, 0.7]);
+			mDashedLineShader.SetParameter("color", mMenuRayColor);
 			mDashedLineShader.SetParameter("ticksLength", 0.17 * SCALE_FACTOR);
 			mDashedLineShader.SetParameter("offset", mDashedLinesOffset);
 			
@@ -153,6 +195,8 @@ function ActionController::Draw()
 				glVertex(mRayEnd);		
 			glEnd();
 		mDashedLineShader.Stop();
+		
+		mPointingCircle.Draw();
 	}
 }
 

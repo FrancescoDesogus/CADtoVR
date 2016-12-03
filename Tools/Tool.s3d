@@ -84,7 +84,7 @@ function Tool::Init(textureString, name, panel, actionController, animator, acti
 	// Creating the text object and putting it as child of the panel. I also make it invisible for now, since no tool 
 	// is selected at the start
 	mToolNameText = Text(name, 0.3, [1, 1, 1]);
-	mPanel.AddChild(mToolNameText.GetObj(), 0.05 * SCALE_FACTOR, mPanel.GetHeight() / 2.0 - mToolNameText.GetFontHeight(), 0.01 * SCALE_FACTOR);
+	mPanel.AddChild(mToolNameText.GetObj(), 0.05 * SCALE_FACTOR, mPanel.GetHeight() / 2.0 - mToolNameText.GetFontHeight(), 0.001 * SCALE_FACTOR);
 	mToolNameText.Hide();
 	
 	// Creating the tool icon

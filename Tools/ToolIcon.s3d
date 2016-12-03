@@ -101,14 +101,14 @@ function ToolIcon::ToolIcon(textureString, name)
 	mToolNameObj = CreateGlassPlane(toolNameTextWidth, toolNameTextHeight, 0.01 * SCALE_FACTOR, [1.0, 1.0, 1.0], 0.8);
 	
 	// Adding the text as child of the container
-	mToolNameObj.AddChild(nameText.GetObj(), 0, -toolNameTextHeight / 4.0, 0.01 * SCALE_FACTOR);
+	mToolNameObj.AddChild(nameText.GetObj(), 0, -toolNameTextHeight / 4.0, 0.001 * SCALE_FACTOR);
 	
 	// Initially the name object is hidden
 	mToolNameObj.Hide();
 	mToolNameTextVisible = false;
 	
 	// Adding the name object as child of the icon itself
-	mIcon.AddChild(mToolNameObj, mIconWidth * 1.5, 0, 0.025 * SCALE_FACTOR);
+	mIcon.AddChild(mToolNameObj, mIconWidth * 1.5, 0, 0.0025 * SCALE_FACTOR);
 }
 
 /*

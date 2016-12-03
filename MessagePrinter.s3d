@@ -26,10 +26,9 @@ class MessagePrinter
 	
 	// Public functions
 	Draw();
-	PrintText(string, value, color);
-	Hide();
-	Unhide();
+	Print(string, value, color);
 	IsVisible();
+	SetVisibility(visible);
 };
 
 /*
@@ -74,7 +73,7 @@ function MessagePrinter::MessagePrinter()
  * value: (optional) this parameter can be anything, and its value will be associated to the string parameter
  * color: (optional) this parameter sets the color for the string
  */
-function MessagePrinter::PrintText(string, value, color)
+function MessagePrinter::Print(string, value, color)
 {
 	var textColor;
 	
@@ -101,12 +100,16 @@ function MessagePrinter::PrintText(string, value, color)
 		// If the string type IS a string, I check the value parameter
 		else
 		{
+			newString = string;
+			
 			// If the value parameter exists, I convert its value to a string
 			if(value != Void)
+			{
 				newValueString = ConvertValueToString(value);
 				
-			// I compose the new string
-			newString = string + ": " + newValueString;
+				// I compose the new string
+				newString += ": " + newValueString;
+			}
 		}
 	}
 	// If the string parameter is an array, I consider it to be an array of strings and I expect the "value" parameter to
@@ -160,11 +163,12 @@ function MessagePrinter::PrintText(string, value, color)
 	else
 	{
 		var newText = mTexts[mTextsArraySize];
+		newText.LoadString(newString);
 		newText.SetColor(textColor);
 		
 		var newPos = mConsole.GetPosition();
 		newPos.x = newPos.x - mConsoleWidth / 2.0 + newText.GetWidthOfLine(0) + 0.01;
-		newPos.y = newPos.y + mConsoleHeight / 2.0 - (newText.GetFontHeight()) * (len(mTexts) + 1);
+		newPos.y = newPos.y + mConsoleHeight / 2.0 - (newText.GetFontHeight()) * (mTextsArraySize + 1);
 		
 		newText.SetPosition(newPos);
 		
@@ -177,49 +181,52 @@ function MessagePrinter::PrintText(string, value, color)
  */
 function MessagePrinter::Draw()
 {
-	var viewport = array(4);
-	viewport = glget(GL_VIEWPORT);
-	
-	glClear(GL_DEPTH_BUFFER_BIT);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, viewport[2], viewport[4], 0, -1, 1);
-//	glOrtho(0, viewport[2], viewport[3], 0, -1, 1);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    
-    
-    glEnable(GL_BLEND);
-    glDisable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
-    
-    glDisable(GL_LIGHTING);
+	if(mIsVisible)
+	{
+		var viewport = array(4);
+		viewport = glget(GL_VIEWPORT);
+		
+		glClear(GL_DEPTH_BUFFER_BIT);
+	    glMatrixMode(GL_PROJECTION);
+	    glLoadIdentity();
+	    glOrtho(0, viewport[2], viewport[4], 0, -1, 1);
+	//	glOrtho(0, viewport[2], viewport[3], 0, -1, 1);
+	    glMatrixMode(GL_MODELVIEW);
+	    glLoadIdentity();
+	    
+	    
+	    glEnable(GL_BLEND);
+	    glDisable(GL_DEPTH_TEST);
+	    glDepthMask(GL_FALSE);
+	    
+	    glDisable(GL_LIGHTING);
 
-	foreach(var txt in mTexts)
-		txt.Draw();
+		foreach(var txt in mTexts)
+			txt.Draw();
+		
+		mConsole.Draw();
 	
-	mConsole.Draw();
 	
-	glMatrixMode(GL_PROJECTION);
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
+		glMatrixMode(GL_PROJECTION);
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+		
+		glEnable( GL_LIGHTING );
 	
-	glEnable( GL_LIGHTING );
-}
-
-function MessagePrinter::Hide()
-{
-	mConsole.Hide();
-	mIsVisible = false;
-}
-
-function MessagePrinter::Unhide()
-{
-	mConsole.Unhide();
-	mIsVisible = true;
+	}
 }
 
 function MessagePrinter::IsVisible()
 {
 	return mIsVisible;
+}
+
+function MessagePrinter::SetVisibility(visible)
+{
+	mIsVisible = visible;
+	
+	if(mIsVisible)
+		mConsole.Unhide();
+	else
+		mConsole.Hide();
 }

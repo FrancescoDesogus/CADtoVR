@@ -181,8 +181,9 @@ function NotesTool::UndoLastAction(content)
 	// In this case I just remove the note from the array; note for improvement: instead of deallocating useful
 	// elements from the array and creating new ones when the tool will be used again I could reuse them and change
 	// the position/orientation/color of the notes. To do this a counter variable would be needed; so I could simply hide the note
-	print("undo", mNotesList[len(mNotesList) - 1].GetPosition());
 	adel(mNotesList, len(mNotesList) - 1);
+	
+	globalMessagePrinter.Print("Undo done; deleted note");
 }
 
 /*
@@ -203,5 +204,5 @@ function NotesTool::RedoLastAction(content)
 
 	aadd(mNotesList, newNote);
 	
-	print("redo", content[0]);
+	globalMessagePrinter.Print("Redo done; added note");
 }

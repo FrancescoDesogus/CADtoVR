@@ -20,8 +20,9 @@ class ToolsMenu
 	var mPanelsPositionOffset;
 	var mPanelsRotationQuaternion;
 	
-	// If one of the panels is hit by the action controller ray, this vector contains the contact point
+	// If one of the panels is hit by the action controller ray, these vector contain the contact point and the normal
 	var mIntersectionPoint;
+	var mIntersectionNormal;
 	
 	// Animator object used to animate the panels (and each tool inside of them) when needed
 	var mAnimator;
@@ -83,6 +84,7 @@ function ToolsMenu::ToolsMenu(menuController, actionController, actionsListManag
 	mAnimator = Animator();
 	
 	mIntersectionPoint = [0, 0, 0];
+	mIntersectionNormal = [0, 0, 0];
 		
 	mCurrentHoveredPanelIndex = -1;
 	mCurrentActivePanelIndex = -1;
@@ -124,6 +126,7 @@ function ToolsMenu::UpdateLogic(dt)
 	// So I consider only the closest panel hit, and I need to find it
 	var contactDistance = CameraGetCurrent().GetZFar();
 	var contactPoint;
+	var contactNormal;
 	var panelIndex = -1;
 	
 //	static var rot = 0;
@@ -155,9 +158,10 @@ function ToolsMenu::UpdateLogic(dt)
 		
 		var findContact = false;
 		var contactPointTmp;
+		var contactNormalTmp;
 		
 		// Now I need to check if the action controller intersects this panel
-		if(panelObj.IsColliding(rayOrigin, rayEnd, &contactPointTmp))
+		if(panelObj.IsColliding(rayOrigin, rayEnd, &contactPointTmp, &contactNormalTmp))
 		{
 			// If there was an intersection there might be another panel which is actually closer to the action controller; so I need
 			// to check if the distance of this panel is lower than the previous distance found (if there was one)
@@ -167,6 +171,7 @@ function ToolsMenu::UpdateLogic(dt)
 			if(distance < contactDistance)
 			{
 				contactPoint = contactPointTmp;
+				contactNormal = contactNormalTmp;
 				contactDistance = distance;
 				panelIndex = i;
 			}
@@ -189,6 +194,7 @@ function ToolsMenu::UpdateLogic(dt)
 		
 		// I save the contact point for later
 		mIntersectionPoint = contactPoint;
+		mIntersectionNormal = contactNormal;
 		
 		// If there is an active panel right now, i.e. a panel that has a selected tool, I set it's action availability to none, 
 		// meaning that the selected tool can't operate since the controller is pointing the menu
@@ -201,6 +207,7 @@ function ToolsMenu::UpdateLogic(dt)
 		// ...I save the fact that there is no hovered panel and no intersection
 		mCurrentHoveredPanelIndex = -1;
 		mIntersectionPoint = Void;
+		mIntersectionNormal = Void;
 		
 		// If there is an active panel I reset the action availability since the user is no longer pointing the menu
 		if(mCurrentActivePanelIndex != -1)
@@ -246,11 +253,14 @@ function ToolsMenu::DeSelectCurrentTool()
 }
 
 /*
- * This function returns the contact point found in the last update, or Void if none was found
+ * This function returns an array containing the contact point and normal found in the last update, or Void if none was found.
  */
 function ToolsMenu::IsIntersectionFound()
 {
-	return mIntersectionPoint;
+	if(mIntersectionPoint == Void)
+		return Void;
+	else
+		return {mIntersectionPoint, mIntersectionNormal};
 }
 
 function ToolsMenu::RotatePanels(rotateLeft)

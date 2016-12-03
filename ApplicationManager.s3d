@@ -108,6 +108,9 @@ class ApplicationManager
 	// Index of the controller being used for the teleportation
 	var mControllerBeingUsedIndex;
 	
+	var mDebugConsoleVisibility;
+	var mDebugConsoleVisibilityButtonPressed;
+	
 
 	// Private methods
 	XVRRendering(eye);
@@ -231,6 +234,8 @@ function ApplicationManager::ApplicationManager(HMD)
 	mTeleportDistanceThreshold = 30.0 * SCALE_FACTOR;
 	
 	globalMessagePrinter = MessagePrinter();
+	mDebugConsoleVisibility = true;
+	mDebugConsoleVisibilityButtonPressed = false;
 }
 
 /*
@@ -420,6 +425,21 @@ function ApplicationManager::UpdateLogic(dt)
 	// The first thing we have to do is to update the logic of the current level
 	mScene.UpdateLogic(dt);
 	
+	
+	if(KeyPressed("1"))
+	{
+		if(!mDebugConsoleVisibilityButtonPressed)
+		{
+			mDebugConsoleVisibilityButtonPressed = true;
+			
+			mDebugConsoleVisibility = !mDebugConsoleVisibility;
+			globalMessagePrinter.SetVisibility(mDebugConsoleVisibility);
+		}
+	}
+	else
+		mDebugConsoleVisibilityButtonPressed = false;
+		
+		
 	var usingController1 = mInputManager.IsPressingSecondaryButton(2);
 	var usingController2 = mInputManager.IsPressingSecondaryButton(2);
 	
