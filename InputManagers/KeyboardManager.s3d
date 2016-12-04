@@ -177,24 +177,24 @@ function KeyboardManager::UpdateCameraPosition()
 	var currentTime = GetTime();
 	
 	// If we press P we enter in debug mode, but only if the time between this keystroke and the last one is greater than the threshold
-	if(keyPressed("P") && !mDebugMode && currentTime - mKeyPressedTime > KEY_PRESSED_PAUSE)
-	{
-		mDebugMode = true;
-		
-		// Sending an event to the main file that we're in debug mode. This is needed so that the mouse cursor can reappar; the call to ShowCursor(true) 
-		// must be done in the thread that process the events, otherwise it won't have any effect. This is why I use an event like this
-		EventPost(DEBUG_MODE_EVENT, true);
-		
-		mKeyPressedTime = GetTime();
-	}
-	else if(keyPressed("P") && mDebugMode && currentTime - mKeyPressedTime > KEY_PRESSED_PAUSE)
-	{
-		mDebugMode = false;
-		
-		EventPost(DEBUG_MODE_EVENT, false);
-
-		mKeyPressedTime = GetTime();
-	}
+//	if(keyPressed("P") && !mDebugMode && currentTime - mKeyPressedTime > KEY_PRESSED_PAUSE)
+//	{
+//		mDebugMode = true;
+//		
+//		// Sending an event to the main file that we're in debug mode. This is needed so that the mouse cursor can reappar; the call to ShowCursor(true) 
+//		// must be done in the thread that process the events, otherwise it won't have any effect. This is why I use an event like this
+//		EventPost(DEBUG_MODE_EVENT, true);
+//		
+//		mKeyPressedTime = GetTime();
+//	}
+//	else if(keyPressed("P") && mDebugMode && currentTime - mKeyPressedTime > KEY_PRESSED_PAUSE)
+//	{
+//		mDebugMode = false;
+//		
+//		EventPost(DEBUG_MODE_EVENT, false);
+//
+//		mKeyPressedTime = GetTime();
+//	}
 
 	
 	// If shift is pressed, sprint is activated

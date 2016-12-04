@@ -12,16 +12,32 @@ class ColorPicker
 	
 	var mColorBar;
 	
+	var mColorBarPosition;
+	
+	var mColorBarSelector;
+	
+	
+	var mIsColorPickerEnabled;
+	
+	var mPreviewColorMesh;
+	var mPreviewColorMaterial;
+	var mPreviewColor;
+	var mPreviewColorPosition;
+	
+	var mColorRectangleShader;
+	var mSimpleColorShader;
+	
+	var mColorRectangle;
+	var mColorRectanglePosition;
+	
+	var mSelectedColor;
+	
 	var mIsVisible;
-	
-	var mPreviewBarSelector;
-	var mActualBarSelector;
-	
-	var mActualBarSelectorPos;
-	
 	
 	// Public functions
 	UpdateLogic(dt);
+	UpdateComponentsPositions();
+	SetColorPickerActive(isActive);
 	
 	Draw();
 	GetObj();
@@ -68,17 +84,6 @@ function ColorPicker::ColorPicker(panel, actionController)
 	var barSelectorHalfWidth = mBarWidth / 2.0;
 	var barSelectorHalfHeight = 0.01 * SCALE_FACTOR / 2.0;
 	
-	var previewBarSelectorMesh = CVmNewMesh(VRP_PLANE, 1, [-barSelectorHalfWidth, -barSelectorHalfHeight, 0], [barSelectorHalfWidth, barSelectorHalfHeight, 0], 2, 2);
-	
-	var previewBarSelectorMaterial = CVmMaterial();
-	previewBarSelectorMaterial.Ambient = [0, 0, 0];
-	previewBarSelectorMaterial.diffuse = [0.1, 0.1, 0.1];
-	previewBarSelectorMaterial.Specular = [0,0,0];
-	previewBarSelectorMesh.SetMaterial(previewBarSelectorMaterial);
-	
-	mPreviewBarSelector = CVmObj(previewBarSelectorMesh);
-	
-	
 	var barSelectorMesh = CVmNewMesh(VRP_PLANE, 1, [-barSelectorHalfWidth, -barSelectorHalfHeight, 0], [barSelectorHalfWidth, barSelectorHalfHeight, 0], 2, 2);
 	
 	var barSelectorMaterial = CVmMaterial();
@@ -87,67 +92,153 @@ function ColorPicker::ColorPicker(panel, actionController)
 	barSelectorMaterial.Specular = [0,0,0];
 	barSelectorMesh.SetMaterial(barSelectorMaterial);
 	
-	mActualBarSelector = CVmObj(barSelectorMesh);
+	mColorBarSelector = CVmObj(barSelectorMesh);
+	mColorBar.AddChild(mColorBarSelector, 0, 0, 0.001 * SCALE_FACTOR);
 	
-	mColorBar.AddChild(mPreviewBarSelector, 0, 0, 0.001 * SCALE_FACTOR);
-	mColorBar.AddChild(mActualBarSelector, 0, 0, 0.001 * SCALE_FACTOR);
+	mColorBarPosition = [mPanel.GetWidth() / 2.0 - mBarWidth, -0.05 * SCALE_FACTOR, 0.001 * SCALE_FACTOR];
+	
+	
+	var colorRectangleHalfWidth = 0.7 * SCALE_FACTOR / 2.0;
+	var colorRectangleHalfHeight = 0.6 * SCALE_FACTOR / 2.0;
+	
+	var colorRectangleMesh = CVmNewMesh(VRP_PLANE, 1, [-colorRectangleHalfWidth, -colorRectangleHalfHeight, 0], [colorRectangleHalfWidth, colorRectangleHalfHeight, 0], 2, 2);
+	
+	mColorRectangle = CVmObj(colorRectangleMesh);
+	
+	mColorRectanglePosition = [-0.05 * SCALE_FACTOR, -0.05 * SCALE_FACTOR, 0.001 * SCALE_FACTOR];
+	
+	
+	
+	var previewColorHalfWidth = colorRectangleHalfWidth / 2.0;
+	var previewColorHalfHeight = 0.3 * SCALE_FACTOR * SCALE_FACTOR / 2.0;
+	
+	var previewColorMesh = CVmNewMesh(VRP_PLANE, 1, [-previewColorHalfWidth, -previewColorHalfHeight, 0], [previewColorHalfWidth, previewColorHalfHeight, 0], 2, 2);
+	
+//	mPreviewColorMaterial = CVmMaterial();
+//	mPreviewColorMaterial.Ambient = [0, 0, 0.1];
+//	mPreviewColorMaterial.diffuse = HSVtoRGB([180, 1, 1]);
+//	mPreviewColorMaterial.Specular = [0, 0, 0.1];
+//	mPreviewColorMesh.ForceMaterial(mPreviewColorMaterial);
+	
+	mPreviewColor = CVmObj(previewColorMesh);
+	
+	mPreviewColorPosition = [mColorRectanglePosition.x, mColorRectanglePosition.y - colorRectangleHalfHeight - previewColorHalfHeight - 0.025 * SCALE_FACTOR, 0.001 * SCALE_FACTOR];
+	
 
-	mActualBarSelectorPos = Void;
+	mSimpleColorShader = CVmShaderProgram("void main(void) { gl_Position = ftransform(); }", "uniform vec3 color; void main (void) { gl_FragColor = vec4(color, 1.0); }", true);
 	
-	mPreviewBarSelector.Hide();
+	mIsColorPickerEnabled = false;
+	
+	mSelectedColor = HSVtoRGB([180, 1, 1]);
 }
 
+
+/*
+ * This method updates the logic of the ColorPicker and checks if the user interacts with the picker via the ActionController
+ */
 function ColorPicker::UpdateLogic(dt)
 {
-	if(mActualBarSelectorPos == Void)
-		mActualBarSelectorPos = mColorBar.LocalToWorld([0, 0, 0.001 * SCALE_FACTOR]);
+	// Updating the positions of the various components
+	UpdateComponentsPositions();
 	
-	// Updating the position of the panel with respect to the menu controller
-	mColorBar.SetPosition(mPanel.LocalToWorld([mPanel.GetWidth() / 2.0 - mBarWidth, -0.05 * SCALE_FACTOR, 0.001 * SCALE_FACTOR]));
-	mColorBar.SetRotationMatrix(mPanel.GetRotationMatrix());
-	
-	var rayOrigin = mActionController.GetPosition();
-	var rayEnd = mActionController.GetDirection() * CameraGetCurrent().GetZFar();
-	
-	var contactPoint;
-	var contactPointNormal;
-		
-	// Now I need to check if the action controller intersects this panel
-	if(mColorBar.IsColliding(rayOrigin, rayEnd, &contactPoint, &contactPointNormal))
+	// Now I need to check if the ActionController's ray intersects the color picker. I only do this if the color picker is
+	// enabled (i.e. the ActionController is already pointing towards the menu) and if the user presses the trigger
+	// (otherwise there is no point in checking wether the user is pointing towards the color picker)
+	if(mIsColorPickerEnabled && mActionController.IsPressingPrimaryButton())
 	{
-		mPreviewBarSelector.Unhide();
+		// Now I need to check if the ActionController intersects the color bar; I need a ray
+		var rayOrigin = mActionController.GetPosition();
+		var rayEnd = mActionController.GetDirection() * CameraGetCurrent().GetZFar();
 		
-		var newPos = mPreviewBarSelector.GetPosition();
-		newPos.y = contactPoint.y;
-		newPos.z = contactPoint.z;
-
-		var direction = Norm(rayOrigin - rayEnd);
-		
-		var topOrigin = mColorBar.LocalToWorld([0, mBarHeight / 2.0, 0.001 * SCALE_FACTOR]);
-		var length = Modulus(contactPoint - topOrigin);
-	
-		var newValue = (length * 360) / mBarHeight;	
-		
-		var old = mPreviewBarSelector.GetPosition();
-		old.y = mBarHeight / 2.0 - length;
-		
-		mPreviewBarSelector.SetPosition(old);
-		
-		if(mActionController.IsPressingPrimaryButton())
+		if(USE_DEBUG_MOUSE)
 		{
-			mPreviewBarSelector.Hide();
-			mActualBarSelector.Unhide();
-
-			mActualBarSelector.SetPosition(old);
+			rayOrigin = CameraGetCurrent().GetPosition() - DEBUG_OPENGL_TRANSLATE_OFFSET;
+			rayEnd = rayOrigin + CameraGetCurrent().GetDirection() * CameraGetCurrent().GetZFar();
+		}
+		
+		var contactPoint;
+		var contactPointNormal;
+		
+		// Checking if the user is pointing the color bar
+		if(mColorBar.IsColliding(rayOrigin, rayEnd, &contactPoint, &contactPointNormal))
+		{
+			// If the user is pointing and pressing, I need to move the selector where the user pressed; the x and z coordinates
+			// of the selector always stay the same, I only need to change the y. So, I need to convert in some way the contact
+			// point (which is in world coordinates) to the local coordinate system of the color bar, which is child of the panel.
+			// So, to do that I take the upper point of the color bar and convert it to world coordinates. 
+			// I then consider the vector that connects this upper point with the actual contact point: the modulus
+			// of this vector will give me the y value that I should use to update the selector's position
+			var topOrigin = mColorBar.LocalToWorld([0.0, mBarHeight / 2.0, 0.0]);
+			var length = Modulus(contactPoint - topOrigin);
+				
+			// Now I need to update the position's vector. I take the old position of the selector (so that I don't need
+			// to compute the x and z, which stay the same), and then I compute the y taking into account that the
+			// center of the bar is the origin of its coordinate system, so I have to consider half the height of the bar
+			var oldPos = mColorBarSelector.GetPosition();
+			oldPos.y = mBarHeight / 2.0 - length;
+			
+			// I can now set the new position			
+			mColorBarSelector.SetPosition(oldPos);
+			
+			// Now, I need to change the color rectangle. First, I need to compute the hue in the point selected, and to do that
+			// I convert the length of the point from the top of the color bar to the range [0, 359], in order to consider it
+			// as an angle, which is the value of the hue
+			var selectedHue = (length * 360) / mBarHeight;
+			
+				
+			var rgb = HSVtoRGB([selectedHue, 1.0, 1.0]);
+			_out.print("first version", rgb);
+			
+//			var previewColorMaterial = CVmMaterial();
+//			previewColorMaterial.Ambient = [0, 0, 0.5];
+//			previewColorMaterial.diffuse = rgb;
+//			previewColorMaterial.Specular = [0, 0, 0.5];
+//			mPreviewColorMesh.ForceMaterial(previewColorMaterial);
+			
+//			mPreviewColorMaterial.diffuse = rgb;
+			
+//			var previewColorMaterial = CVmMaterial();
+//			previewColorMaterial.Ambient = [0, 0, 0.5];
+//			previewColorMaterial.diffuse = rgb;
+//			previewColorMaterial.Specular = [0, 0, 0.5];
+////			mPreviewColorMesh.ForceMaterial(previewColorMaterial);
+//			
+//			mPreviewColor.ForceMaterial(previewColorMaterial);
+			
+			mSelectedColor = rgb;
+//			mPreviewColorMaterial.diffuse = rgb;
 		}
 	}
-	else
-		mPreviewBarSelector.Hide();
+}
+
+function ColorPicker::UpdateComponentsPositions()
+{
+	mColorBar.SetPosition(mPanel.LocalToWorld(mColorBarPosition));
+	mColorBar.SetRotationMatrix(mPanel.GetRotationMatrix());
+	
+	mColorRectangle.SetPosition(mPanel.LocalToWorld(mColorRectanglePosition));
+	mColorRectangle.SetRotationMatrix(mPanel.GetRotationMatrix());
+	
+	mPreviewColor.SetPosition(mPanel.LocalToWorld(mPreviewColorPosition));
+	mPreviewColor.SetRotationMatrix(mPanel.GetRotationMatrix());
+}
+
+function ColorPicker::SetColorPickerActive(isActive)
+{
+	mIsColorPickerEnabled = isActive;
 }
 
 function ColorPicker::Draw()
 {
 	mColorBar.Draw();
+	
+	mColorRectangle.Draw();
+	
+	mSimpleColorShader.Start();
+		mSimpleColorShader.SetParameter("color", mSelectedColor);
+		
+		mPreviewColor.Draw();
+	mSimpleColorShader.Stop();
 }
 
 
@@ -194,6 +285,8 @@ function ColorPicker::LocalToWorld(point)
 function ColorPicker::SetScale(scale)
 {
 	mColorBar.SetScale(scale);
+	mColorRectangle.SetScale(scale);
+	mPreviewColor.SetScale(scale);
 }
 
 function ColorPicker::GetScale()

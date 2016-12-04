@@ -120,7 +120,15 @@ function ToolsMenu::UpdateLogic(dt)
 {
 	// First, I need to check if the action controller is pointing the menu
 	var rayOrigin = mActionController.GetPosition();
-	var rayEnd = mActionController.GetDirection() * CameraGetCurrent().GetZFar();
+	var rayEnd = rayOrigin + mActionController.GetDirection() * CameraGetCurrent().GetZFar();
+	
+	// If I press 2 with the keyboard this boolean becomes true and I can point with the mouse instead of the controller
+	// for debugging. I use this boolean in a lot of places in the code
+	if(USE_DEBUG_MOUSE)
+	{
+		rayOrigin = CameraGetCurrent().GetPosition() - DEBUG_OPENGL_TRANSLATE_OFFSET;
+		rayEnd = rayOrigin + CameraGetCurrent().GetDirection() * CameraGetCurrent().GetZFar();
+	}
 	
 	// Depending on the order of the panels in the array or their position, more than one panel could be considered hit.
 	// So I consider only the closest panel hit, and I need to find it

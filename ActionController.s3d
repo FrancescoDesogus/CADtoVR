@@ -78,7 +78,7 @@ function ActionController::ActionController(viveController, inputManager)
 
 function ActionController::UpdateLogic(dt, debugMode)
 {
-	if(!debugMode)
+	if(!debugMode && !USE_DEBUG_MOUSE)
 	{
 		static var rotX = 0;
 		static var rotY = 0;

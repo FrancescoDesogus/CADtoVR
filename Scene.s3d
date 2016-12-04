@@ -191,7 +191,7 @@ function Scene::UpdateLogic(dt)
 	var cameraPosition = mCamera.GetPosition() - mOpenglTranslationOffset;
 	
 	// I put the controller in front of the camera, for the debugging purposes, if VR isn't on
-	if(!mIsVRon)
+	if(!mIsVRon && !USE_DEBUG_MOUSE)
 	{
 		mMenuController.SetPosition(cameraPosition + mCamera.GetDirection() * 3 * SCALE_FACTOR);
 		mActionController.SetPosition(cameraPosition + mCamera.GetDirection() * 3 * SCALE_FACTOR);

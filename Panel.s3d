@@ -191,6 +191,12 @@ function Panel::FindHoveredIcon(rayOrigin, rayEnd)
 {
 	var found = false;
 	
+	if(USE_DEBUG_MOUSE)
+	{
+		rayOrigin = CameraGetCurrent().GetPosition() - DEBUG_OPENGL_TRANSLATE_OFFSET;
+		rayEnd = rayOrigin + CameraGetCurrent().GetDirection() * CameraGetCurrent().GetZFar();
+	}
+	
 	// I look for the hovered icon only if there is no tool active in this panel
 	if(!mIsToolSelected)
 	{

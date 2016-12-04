@@ -1,12 +1,17 @@
 global var DEBUG_MODE = true;
 global var SCALE_FACTOR = 0.2;
 
+// These 2 variables are used for debug purposes; in particular, they let me switch from pointing with controllers to 
+// pointing with the mouse, and the opengl offset is used across all files to compute the correct camera's position 
+global var USE_DEBUG_MOUSE = false;
+global var DEBUG_OPENGL_TRANSLATE_OFFSET;
+
 #include "Utils.s3d"
 #include "Text.s3d"
 #include "Animator.s3d"
 #include "MessagePrinter.s3d"
 
-global var globalMessagePrinter;
+global var _out;
 
 #include "ViveController.s3d"
 #include "MenuController.s3d"
@@ -111,6 +116,8 @@ class ApplicationManager
 	var mDebugConsoleVisibility;
 	var mDebugConsoleVisibilityButtonPressed;
 	
+	var mDebugMouseButtonPressed;
+	
 
 	// Private methods
 	XVRRendering(eye);
@@ -170,6 +177,7 @@ function ApplicationManager::ApplicationManager(HMD)
 	aadd(mLights, light2);
 	
 	mOpenglTranslationOffset = [0, 0, 0]; 
+	DEBUG_OPENGL_TRANSLATE_OFFSET = [0, 0, 0];
 	mOpenglTranslationOffsetAnimationID = 1;
 	
 	mStarting = true;
@@ -233,9 +241,10 @@ function ApplicationManager::ApplicationManager(HMD)
 	mIsTeleporting = false;
 	mTeleportDistanceThreshold = 30.0 * SCALE_FACTOR;
 	
-	globalMessagePrinter = MessagePrinter();
+	_out = MessagePrinter();
 	mDebugConsoleVisibility = true;
 	mDebugConsoleVisibilityButtonPressed = false;
+	mDebugMouseButtonPressed = false;
 }
 
 /*
@@ -277,6 +286,7 @@ function ApplicationManager::XVRRendering(eye)
 {
 	// The current level might change the opengl offset (for now only when it moves the camera with the elevator), so we get it before applying it below
 	mOpenglTranslationOffset = mScene.GetOpenglTransformOffset();
+	DEBUG_OPENGL_TRANSLATE_OFFSET = mScene.GetOpenglTransformOffset(); 
 	
 	/* This is very important: in order to move around with the HTC Vive using the teleportation, we need to translate everything when rendering by
 	 * the amount computed when the teleportation goes through. This means that the whole world will shift by this amount, BUT the XVR objects
@@ -407,7 +417,7 @@ function ApplicationManager::XVRRendering(eye)
 	if(!mIsVRon)
 		DrawCrosshair();
 		
-	globalMessagePrinter.Draw();
+	_out.Draw();
 		
 		
 	// If there is a fade transition going on or the level is ending I fade to black the screen (I check if the level is ending so that when it is
@@ -433,11 +443,23 @@ function ApplicationManager::UpdateLogic(dt)
 			mDebugConsoleVisibilityButtonPressed = true;
 			
 			mDebugConsoleVisibility = !mDebugConsoleVisibility;
-			globalMessagePrinter.SetVisibility(mDebugConsoleVisibility);
+			_out.SetVisibility(mDebugConsoleVisibility);
 		}
 	}
 	else
 		mDebugConsoleVisibilityButtonPressed = false;
+		
+	if(KeyPressed("2"))
+	{
+		if(!mDebugMouseButtonPressed)
+		{
+			mDebugMouseButtonPressed = true;
+			
+			USE_DEBUG_MOUSE = !USE_DEBUG_MOUSE;
+		}
+	}
+	else
+		mDebugMouseButtonPressed = false;
 		
 		
 	var usingController1 = mInputManager.IsPressingSecondaryButton(2);
@@ -583,6 +605,8 @@ function ApplicationManager::UpdateLogic(dt)
 						mOpenglTranslationOffset.x = cameraPosition.x  - mPositionCircleObj.GetPosition().x;
 						mOpenglTranslationOffset.z = cameraPosition.z  - mPositionCircleObj.GetPosition().z;
 						
+						DEBUG_OPENGL_TRANSLATE_OFFSET = mOpenglTranslationOffset;
+						
 						// I notify the current level that the offset has changed
 						mScene.SetOpenglTransformOffset(&mOpenglTranslationOffset);
 					}
@@ -627,6 +651,8 @@ function ApplicationManager::UpdateLogic(dt)
 		var cameraPosition = mCamera.GetPosition();
 		mOpenglTranslationOffset.x = cameraPosition.x  - mPositionCircleObj.GetPosition().x;
 		mOpenglTranslationOffset.z = cameraPosition.z  - mPositionCircleObj.GetPosition().z;
+		
+		DEBUG_OPENGL_TRANSLATE_OFFSET = mOpenglTranslationOffset;
 		
 		// I notify the current level that the offset has changed
 		mScene.SetOpenglTransformOffset(&mOpenglTranslationOffset);

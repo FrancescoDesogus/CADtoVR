@@ -60,7 +60,7 @@ function MenuController::MenuController(viveController, inputManager)
  */
 function MenuController::UpdateLogic(dt, isVRon)
 {
-	if(!isVRon)
+	if(!isVRon && !USE_DEBUG_MOUSE)
 	{
 		static var rotX = 0;
 		static var rotY = 0;

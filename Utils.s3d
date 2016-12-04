@@ -81,9 +81,10 @@ function ConvertValueToString(value)
 	else if(valtype(value) == "V")
 	{
 		newValueString += "[";
-		newValueString += ConvertValueToString(value.x) + ", ";
-		newValueString += ConvertValueToString(value.y) + ", ";
-		newValueString += ConvertValueToString(value.z);
+		
+		for(var i = 0; i < len(value); i++)
+			newValueString += ConvertValueToString(value[i]) + (i < len(value) - 1 ? ", " : "");
+			
 		newValueString += "]";
 	}
 	// If the value is an array, I recursively convert it to a string
@@ -119,6 +120,65 @@ function RotateArrayByOne(arr)
     	
 	// Now I manually add the last element, which was the first
 	arr[len(arr) - 1] = firstElement;
+}
+
+/* 
+ * Implementation of a converter function from HSV color space to RGB given an array containing hue, saturation and value.
+ * Hue must be in the range [0, 360] (it's in degrees), the saturation and value must be in the range [0, 1].
+ * The implementation was directly taken by a post on stackoverflow
+ */
+function HSVtoRGB(hsv)
+{
+	var hue = hsv.x;
+	var saturation = hsv.y;
+	var value = hsv.z;
+	
+	var i;
+    var f, p, q, t;
+    var r, g, b;
+    
+    hue /= 60;            // sector 0 to 5
+    i = floor(hue);
+    f = hue - i;          // factorial part of h
+    p = value * (1 - saturation);
+    q = value * (1 - saturation * f);
+    t = value * (1 - saturation * (1 - f));
+    
+    switch(i) 
+    {
+        case 0:
+            r = value;
+            g = t;
+            b = p;
+            break;
+        case 1:
+            r = q;
+            g = value;
+            b = p;
+            break;
+        case 2:
+            r = p;
+            g = value;
+            b = t;
+            break;
+        case 3:
+            r = p;
+            g = q;
+            b = value;
+            break;
+        case 4:
+            r = t;
+            g = p;
+            b = value;
+            break;
+        default:        // case 5:
+            r = value;
+            g = p;
+            b = q;
+            break; 
+    }
+    
+    return [r, g, b];
 }
 
 /*
