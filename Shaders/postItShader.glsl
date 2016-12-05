@@ -11,6 +11,7 @@ void main()
 // Texture of the object
 uniform sampler2D tex;
 uniform float alpha;
+uniform vec3 color;
 
 void main()
 {
@@ -20,7 +21,7 @@ void main()
     	discard;
     
     if(colorFromTex.b > 0.8)
-    	colorFromTex = vec3(1.0, 0.0, 0.0);
+    	colorFromTex = color;
 	else
 		colorFromTex = vec3(0.0, 1.0, 0.0);
     	

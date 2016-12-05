@@ -10,8 +10,9 @@ class NotesTool : Tool
 	// This CVmObject represent the "preview" note that is put on the tip of the controller
 	var mPreviewNote;
 	
-	// List of currently active notes
+	// List of currently active notes and list of corresponding colors
 	var mNotesList;
+	var mNotesColor;
 	
 	// Shader to render the notes
 	var mNotesShader;
@@ -19,6 +20,7 @@ class NotesTool : Tool
 	// Texture for the note object; passed to the shader
 	var mNoteTexture;
 	
+	// ColorPicker object, used to choose the color for each note
 	var mColorPicker;
 	
 	// Public functions
@@ -50,16 +52,18 @@ function NotesTool::NotesTool(panel, actionController, animator, actionsListMana
 
 	mPreviewNote = CVmObj(mNoteMesh);
 	
-	// Initially the scale of the preview note is 0; it will be animated when it appears
+	mColorPicker = ColorPicker(mPanel, mActionController);
+	
+	// Initially the scale of the components for this tool are 0; they will be animated when they appear
 	mPreviewNote.SetScale([0, 0, 0]);
+	mColorPicker.SetScale([0, 0, 0]);
 	
 	mNotesShader = CVmShaderProgram("Shaders/postItShader.glsl");
 	
 	mNotesList = {};
+	mNotesColor = {};
 	
 	mNoteTexture = CVmTexture("Textures/postit.png");
-	
-	mColorPicker = ColorPicker(mPanel, mActionController);
 }
 
 
@@ -78,6 +82,7 @@ function NotesTool::Draw()
 	mNotesShader.Start();
 		// I pass the texture to the shader via the id I used in the SetActiveTexture() call above
 		mNotesShader.SetParameter("tex", 5);
+		mNotesShader.SetParameter("color", mColorPicker.GetSelectedColor());
 		
 		// If there is an action available (this also implies that the tool is selected) I draw the preview note.
 		// Since when the action is not available anymore (i.e. the user is pointing the menu) I play a little scaling animation,
@@ -91,12 +96,19 @@ function NotesTool::Draw()
 		
 		mNotesShader.SetParameter("alpha", 1.0);
 		
-		// I draw each active note in any case
-		foreach(var note in mNotesList)
+		// I draw each active note in any case, with their corresponding color
+		for(var i = 0; i < len(mNotesList); i++)
+		{
+			var note = mNotesList[i];
+			mNotesShader.SetParameter("color", mNotesColor[i]);
 			note.Draw();
+		}
 			
 	mNotesShader.Stop();
 	
+	// If the tool is active and the scale of the color picker is bigger then 0 I draw it. I do this check
+	// in order NOT to draw it when the tool is not selected anymore but still draw it while it disappears 
+	// after deselcting the tool
 	if(mIsToolActive || (!mIsToolActive && mColorPicker.GetScale().x > 0))
 		mColorPicker.Draw();
 }
@@ -131,8 +143,11 @@ function NotesTool::ManageNotes()
 		// If the player presses the trigger on the action controller the note is put in the world
 		if(mActionController.PrimaryButtonSinglePressed())
 		{
+			var color = mColorPicker.GetSelectedColor();
+			
 			// Adding the note to the list of persistent notes
 			aadd(mNotesList, mPreviewNote);
+			aadd(mNotesColor, color);
 			
 			// Creating a new preview note
 			mPreviewNote = CVmObj(mNoteMesh);
@@ -141,9 +156,8 @@ function NotesTool::ManageNotes()
 			mAnimator.CreateScalingTransition(mPreviewNote, [0, 0, 0], [1.0, 1.0, 1.0], 0.2, false, 2);	
 			
 			// Now, this is the part needed for the undo/redo mechanism. I need to save the relevant things of the note
-			// so that in case of undo they can be used; in this case it's only the position and orientation of the note,
-			// but in the future there will probably be also the color, and maybe other stuff too
-			var newActionContent = {notePosition, mActionController.GetRotationMatrix()};
+			// so that in case of undo they can be used; in this case it's only the position, orientation and color of the note
+			var newActionContent = {notePosition, mActionController.GetRotationMatrix(), color};
 			
 			// I say to the undo/redo manager that there was an action, and I pass a reference to the instance 
 			// of this tool and I pass the content the will be useful for undo/redo
@@ -154,15 +168,12 @@ function NotesTool::ManageNotes()
 
 function NotesTool::ManageColorPicker(dt)
 {
-//	// I only procede if there is NOT an action available; otherwise there is no reason t
-//	if(!misActionAvailable)
-//	{
-		mColorPicker.UpdateLogic(dt);
-//	}
+	mColorPicker.UpdateLogic(dt);
 }
 
 function NotesTool::SetToolActive(active)
 {
+	// When the tool activates/deactivates I animate the color picker
 	if(!mIsToolActive && active)
 		mAnimator.CreateScalingTransition(mColorPicker, [0, 0, 0], [1.0, 1.0, 1.0], 0.2, false, 2);
 	else if(mIsToolActive && !active)	
@@ -201,6 +212,7 @@ function NotesTool::UndoLastAction(content)
 	// elements from the array and creating new ones when the tool will be used again I could reuse them and change
 	// the position/orientation/color of the notes. To do this a counter variable would be needed; so I could simply hide the note
 	adel(mNotesList, len(mNotesList) - 1);
+	adel(mNotesColor, len(mNotesColor) - 1);
 	
 	_out.Print("Undo done; deleted note");
 }
@@ -208,20 +220,26 @@ function NotesTool::UndoLastAction(content)
 /*
  * This method redos the last action of this tool.
  * 
- * "content" is an array that contains in the first index the position of the note and at the second index its orientation
+ * "content" is an array that contains in the first index the position of the note, at the second index 
+ * its orientation and at the third index the color of the note
  */
 function NotesTool::RedoLastAction(content)
 {
+	var notePosition = content[0];
+	var noteOrientation = content[1];
+	var noteColor = content[2];
+	
 	// I need to create a note in the place of the last note added. So I create a new one; note for improvement: since I'm
 	// redoing an "add" action, there was definitely a note before in the mNotesList array, so I could simply NOT remove it
 	// from the array when I'm undoing and then when I'm redoing I simply take that note and make it visible again
 	var newNote = CVmObj(mNoteMesh);
 	
 	// Setting the position and orientation of the note using the information from the content array
-	newNote.SetPosition(content[0]);
-	newNote.SetRotationMatrix(content[1]);
+	newNote.SetPosition(notePosition);
+	newNote.SetRotationMatrix(noteOrientation);
 
 	aadd(mNotesList, newNote);
+	aadd(mNotesColor, noteColor);
 	
 	_out.Print("Redo done; added note");
 }

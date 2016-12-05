@@ -1,43 +1,82 @@
  
+ 
+/*
+ * This class implements a color picker. It's implemented in the HSV color space. It contains a color bar in which
+ * the user can salect the hue and a color rectangle in which the selected hue is represented with every possible value
+ * of saturation and value components ("saturation" is the x component in the rectangle, while "value" is the y component
+ * and it's inverted, meaning that it increases while it goes to the bottom of the rectangle)
+ */
 class ColorPicker
 {
+	// Reference to the panel in which the color picker will be put
 	var mPanel;
 	
+	// Reference to the ActionController; used to determine if the components of the color picker are being pointed
 	var mActionController;
+
+
+	// CVmObject for the color bar (that displays the hue)
+	var mColorBar;
 	
-	var mColorPicker;
-	
+	// Size of the color bar
 	var mBarWidth;
 	var mBarHeight;
 	
-	var mColorBar;
-	
+	// Position of the color bar; it's expressed in the local coordinate system of the "parent" of the ColorPicker (the mPanel),
+	// this way it will correctly put the object on the panel even after rotations and translations
 	var mColorBarPosition;
 	
+	// CVmObj for the selector bar that shows the user the selected Hue
 	var mColorBarSelector;
 	
+
+	// CVmObject for the color rectangle, that lets the user choose the saturation and value of the selected hue
+	var mColorRectangle;
 	
-	var mIsColorPickerEnabled;
+	// Size of the color rectangle
+	var mColorRectangleWidth;
+	var mColorRectangleHeight;
 	
-	var mPreviewColorMesh;
-	var mPreviewColorMaterial;
-	var mPreviewColor;
-	var mPreviewColorPosition;
+	// Position of the color rectangle; it's expressed in the local coordinate system of the "parent" of the ColorPicker (the mPanel)
+	var mColorRectanglePosition;
 	
+	// CVmObj for the selector circle that shows the user the selected color
+	var mColorRectangleSelector;
+	
+	// Position of the selector circle
+	var mColorRectangleSelectorPosition;
+	
+	
+	// CVmObject for the color rectangle that shows the selected color
+	var mPreviewColorObj;
+	
+	// Position of the color preview color; it's expressed in the local coordinate system of the "parent" of the ColorPicker
+	var mPreviewColorObjPosition;
+	
+	
+	// Shader for the color rectangle and a simple color shader for the preview color object, because changing 
+	// the material's color didn't work at all at runtime
 	var mColorRectangleShader;
 	var mSimpleColorShader;
 	
-	var mColorRectangle;
-	var mColorRectanglePosition;
 	
+	// This value holds the selected hue from the color bar. Hue has a range from 0 to 360
+	var mSelectedHueValue;
+	
+	// This vector contains the resulting selected color
 	var mSelectedColor;
 	
+	// Booleans that express if the color picker is enabled and visible. When it's "enabled", the class will look for
+	// possibile user interactions with the color picker (i.e. button press), otherwise the class will simply update the
+	// position of each of its components at each tick
+	var mIsColorPickerEnabled;
 	var mIsVisible;
 	
 	// Public functions
 	UpdateLogic(dt);
 	UpdateComponentsPositions();
 	SetColorPickerActive(isActive);
+	GetSelectedColor();
 	
 	Draw();
 	GetObj();
@@ -63,6 +102,7 @@ function ColorPicker::ColorPicker(panel, actionController)
 	mPanel = panel;
 	mActionController = actionController;
 	
+	/* Creation of the color bar */
 	mBarWidth = 0.1 * SCALE_FACTOR;
 	mBarHeight = 0.7 * SCALE_FACTOR;
 	
@@ -71,16 +111,16 @@ function ColorPicker::ColorPicker(panel, actionController)
 	
 	var barMesh = CVmNewMesh(VRP_PLANE, 1, [-barHalfWidth, -barHalfHeight, 0], [barHalfWidth, barHalfHeight, 0], 2, 2);
 	
-	mColorBar = CVmObj(barMesh);
-	
 	var barMaterial = CVmMaterial();
-	barMaterial.Ambient = [0, 0, 0];
-	barMaterial.Shininess = 0.05;
-	barMaterial.Specular = [0,0,0];
 	barMaterial.SetTexture(CVmTexture("Textures/hueBar.png"));
-	
 	barMesh.SetMaterial(barMaterial);
 	
+	mColorBar = CVmObj(barMesh);
+	
+	mColorBarPosition = [mPanel.GetWidth() / 2.0 - mBarWidth, -0.05 * SCALE_FACTOR, 0.001 * SCALE_FACTOR];
+	
+	
+	// Creation of the selector for the color bar. It is put as child of the color bar directly
 	var barSelectorHalfWidth = mBarWidth / 2.0;
 	var barSelectorHalfHeight = 0.01 * SCALE_FACTOR / 2.0;
 	
@@ -95,11 +135,15 @@ function ColorPicker::ColorPicker(panel, actionController)
 	mColorBarSelector = CVmObj(barSelectorMesh);
 	mColorBar.AddChild(mColorBarSelector, 0, 0, 0.001 * SCALE_FACTOR);
 	
-	mColorBarPosition = [mPanel.GetWidth() / 2.0 - mBarWidth, -0.05 * SCALE_FACTOR, 0.001 * SCALE_FACTOR];
 	
 	
-	var colorRectangleHalfWidth = 0.7 * SCALE_FACTOR / 2.0;
-	var colorRectangleHalfHeight = 0.6 * SCALE_FACTOR / 2.0;
+	
+	/* Creation of the color rectangle */
+	mColorRectangleWidth = 0.7 * SCALE_FACTOR;
+	mColorRectangleHeight = 0.6 * SCALE_FACTOR;
+	
+	var colorRectangleHalfWidth = mColorRectangleWidth / 2.0;
+	var colorRectangleHalfHeight = mColorRectangleHeight / 2.0;
 	
 	var colorRectangleMesh = CVmNewMesh(VRP_PLANE, 1, [-colorRectangleHalfWidth, -colorRectangleHalfHeight, 0], [colorRectangleHalfWidth, colorRectangleHalfHeight, 0], 2, 2);
 	
@@ -108,28 +152,42 @@ function ColorPicker::ColorPicker(panel, actionController)
 	mColorRectanglePosition = [-0.05 * SCALE_FACTOR, -0.05 * SCALE_FACTOR, 0.001 * SCALE_FACTOR];
 	
 	
+	// Creation of the color rectangle selector circle. It's NOT put as child of the color rectangle because it be problematic
+	var colorRectangleSelectorMesh = CVmNewMesh(VRP_CIRCLE, 30, 0.04 * SCALE_FACTOR, 1); 
+
+	var colorRectangleSelectorMaterial = CVmMaterial();
+	colorRectangleSelectorMaterial.SetTexture(CVmTexture("Textures/colorSelector.png"));
+	colorRectangleSelectorMesh.SetMaterial(colorRectangleSelectorMaterial);
 	
+	mColorRectangleSelector = CVmObj(colorRectangleSelectorMesh);
+	mColorRectangleSelectorPosition = [0.0, 0.0, 0.001 * SCALE_FACTOR];
+	
+	
+	
+	/* Creation of the preview color rectangle */
 	var previewColorHalfWidth = colorRectangleHalfWidth / 2.0;
 	var previewColorHalfHeight = 0.3 * SCALE_FACTOR * SCALE_FACTOR / 2.0;
 	
 	var previewColorMesh = CVmNewMesh(VRP_PLANE, 1, [-previewColorHalfWidth, -previewColorHalfHeight, 0], [previewColorHalfWidth, previewColorHalfHeight, 0], 2, 2);
 	
-//	mPreviewColorMaterial = CVmMaterial();
-//	mPreviewColorMaterial.Ambient = [0, 0, 0.1];
-//	mPreviewColorMaterial.diffuse = HSVtoRGB([180, 1, 1]);
-//	mPreviewColorMaterial.Specular = [0, 0, 0.1];
-//	mPreviewColorMesh.ForceMaterial(mPreviewColorMaterial);
+	mPreviewColorObj = CVmObj(previewColorMesh);
 	
-	mPreviewColor = CVmObj(previewColorMesh);
+	mPreviewColorObjPosition = [mColorRectanglePosition.x, mColorRectanglePosition.y - colorRectangleHalfHeight - previewColorHalfHeight - 0.025 * SCALE_FACTOR, 0.001 * SCALE_FACTOR];
 	
-	mPreviewColorPosition = [mColorRectanglePosition.x, mColorRectanglePosition.y - colorRectangleHalfHeight - previewColorHalfHeight - 0.025 * SCALE_FACTOR, 0.001 * SCALE_FACTOR];
 	
-
+	// Shaders
+	mColorRectangleShader = CVmShaderProgram("Shaders/colorPickerRectangleShader.glsl");
 	mSimpleColorShader = CVmShaderProgram("void main(void) { gl_Position = ftransform(); }", "uniform vec3 color; void main (void) { gl_FragColor = vec4(color, 1.0); }", true);
 	
 	mIsColorPickerEnabled = false;
+	mIsVisible = true;
 	
-	mSelectedColor = HSVtoRGB([180, 1, 1]);
+	// The starting color is in the middle of the color bar, so it has hue 180°
+	mSelectedHueValue = 180.0;
+	
+	// To find the corresponding color I assume that the selector in the color rectangle is in the center, 
+	// so it has 0.5 saturation and 0.5 value
+	mSelectedColor = HSVtoRGB([mSelectedHueValue, 0.5, 0.5]);
 }
 
 
@@ -150,6 +208,7 @@ function ColorPicker::UpdateLogic(dt)
 		var rayOrigin = mActionController.GetPosition();
 		var rayEnd = mActionController.GetDirection() * CameraGetCurrent().GetZFar();
 		
+		// Debug check
 		if(USE_DEBUG_MOUSE)
 		{
 			rayOrigin = CameraGetCurrent().GetPosition() - DEBUG_OPENGL_TRANSLATE_OFFSET;
@@ -160,7 +219,7 @@ function ColorPicker::UpdateLogic(dt)
 		var contactPointNormal;
 		
 		// Checking if the user is pointing the color bar
-		if(mColorBar.IsColliding(rayOrigin, rayEnd, &contactPoint, &contactPointNormal))
+		if(mColorBar.IsColliding(rayOrigin, rayEnd, &contactPoint))
 		{
 			// If the user is pointing and pressing, I need to move the selector where the user pressed; the x and z coordinates
 			// of the selector always stay the same, I only need to change the y. So, I need to convert in some way the contact
@@ -181,36 +240,67 @@ function ColorPicker::UpdateLogic(dt)
 			mColorBarSelector.SetPosition(oldPos);
 			
 			// Now, I need to change the color rectangle. First, I need to compute the hue in the point selected, and to do that
-			// I convert the length of the point from the top of the color bar to the range [0, 359], in order to consider it
+			// I convert the length of the point from the top of the color bar to the range [0, 360], in order to consider it
 			// as an angle, which is the value of the hue
-			var selectedHue = (length * 360) / mBarHeight;
+			mSelectedHueValue = (length * 360) / mBarHeight;
 			
-				
-			var rgb = HSVtoRGB([selectedHue, 1.0, 1.0]);
-			_out.print("first version", rgb);
 			
-//			var previewColorMaterial = CVmMaterial();
-//			previewColorMaterial.Ambient = [0, 0, 0.5];
-//			previewColorMaterial.diffuse = rgb;
-//			previewColorMaterial.Specular = [0, 0, 0.5];
-//			mPreviewColorMesh.ForceMaterial(previewColorMaterial);
+			// I find the corresponding color for the preview color, given the current position of the color rectangle selector.
+			// To find the values for saturation and value I consider the local coordinates of the selector and normalize it
+			// with the size of the rectangle (remembering that the center of the rectangle is the origin of its coordinate
+			// system, while for finding the saturation and value components I need it to be at the top left corner. So
+			// I need to add half the size for each axis)
+			var saturation = (mColorRectangleSelectorPosition.x + mColorRectangleWidth / 2.0) / mColorRectangleWidth;
+			var value = (mColorRectangleSelectorPosition.y + mColorRectangleHeight / 2.0) / mColorRectangleHeight;
 			
-//			mPreviewColorMaterial.diffuse = rgb;
+			// Now that I have the saturation and value I can compute the resulting color
+			mSelectedColor = HSVtoRGB([mSelectedHueValue, saturation, value]);
+		}
+		// Checking if the user is pointing the color rectangle
+		else if(mColorRectangle.IsColliding(rayOrigin, rayEnd, &contactPoint, &contactPointNormal))
+		{
+			// I need to move the rectangle selector where the user is pointing. It took me a while to figure out because
+			// there are a lot of problems related to the fact that the circle is not child of the object (this would
+			// cause problems such as the fact that when I drew the rectangle using a shader it would also draw
+			// the circle with that shader) and to the fact that position it in the rectangle is not easy if it isn't,
+			// because the rectangle can be rotated and moved around, and when it's rotated its world position stays
+			// the same (even if it actually changes position). 
+			// In the end, the only approach that I found that worked is to map the 3D world coordinates of the contact point
+			// to the 2D local coordinate system of the rectangle, as described in my post here:
+			// http://stackoverflow.com/questions/40963091/how-to-map-3d-coordinates-to-2d-plane/40965322#40965322
+			// To do that I need to assign to the rectangle 2 perpendicular unit vectors that defined its x and y axis in
+			// world coordinates, and then I need to project the contact point onto both of these direction vectors.
+			// First, I need to obtain the world coordinates of the rectangle
+			var rectangleOrigin = mColorRectangle.LocalToWorld([0, 0, 0]);
+
+			// Now I need to compute the x and y axis of the rectangle. Basically for the x it's just [1, 0, 0],
+			// and for the y [0, 1, 0], but I need a direction that goes towards these points, so I subtract the origin
+			// of the rectangle. I need to convert these vectors to world coordinates and then take the norm to make the
+			// vectors true directions. This way I have both the x and y axis directions expressed in world coordinates
+			var xDir = Norm(mColorRectangle.LocalToWorld([1 * SCALE_FACTOR, 0, 0]) - rectangleOrigin);
+			var yDir = Norm(mColorRectangle.LocalToWorld([0, 1 * SCALE_FACTOR, 0]) - rectangleOrigin);
 			
-//			var previewColorMaterial = CVmMaterial();
-//			previewColorMaterial.Ambient = [0, 0, 0.5];
-//			previewColorMaterial.diffuse = rgb;
-//			previewColorMaterial.Specular = [0, 0, 0.5];
-////			mPreviewColorMesh.ForceMaterial(previewColorMaterial);
-//			
-//			mPreviewColor.ForceMaterial(previewColorMaterial);
+			var fromOriginVector = contactPoint - rectangleOrigin;
 			
-			mSelectedColor = rgb;
-//			mPreviewColorMaterial.diffuse = rgb;
+			// The only thing that remains to do is to project the contact point onto these 2 direction vectors.
+			// It's a dot product between the direction vector and the vector that connects the origin of the rectangle to the point.
+			// The x and y coordinates are the 2D coordinates of the point in the local coordinate system of the rectangle,
+			// so now I can simply use these 2 coordinates along with rectangle.LocalToWorld() to position the circle
+			mColorRectangleSelectorPosition.x = xDir * fromOriginVector;
+			mColorRectangleSelectorPosition.y = yDir * fromOriginVector;
+			
+			// Now I compute the resulting color
+			var saturation = (mColorRectangleSelectorPosition.x + mColorRectangleWidth / 2.0) / mColorRectangleWidth;
+			var value = (mColorRectangleSelectorPosition.y + mColorRectangleHeight / 2.0) / mColorRectangleHeight;
+			
+			mSelectedColor = HSVtoRGB([mSelectedHueValue, saturation, value]);
 		}
 	}
 }
 
+/*
+ * This method is used internally to update the position of the various components present in the Color Picker
+ */
 function ColorPicker::UpdateComponentsPositions()
 {
 	mColorBar.SetPosition(mPanel.LocalToWorld(mColorBarPosition));
@@ -219,8 +309,15 @@ function ColorPicker::UpdateComponentsPositions()
 	mColorRectangle.SetPosition(mPanel.LocalToWorld(mColorRectanglePosition));
 	mColorRectangle.SetRotationMatrix(mPanel.GetRotationMatrix());
 	
-	mPreviewColor.SetPosition(mPanel.LocalToWorld(mPreviewColorPosition));
-	mPreviewColor.SetRotationMatrix(mPanel.GetRotationMatrix());
+	// To position the rectangle selector I consider the position as 2D mapping on the rectangle, so I only need
+	// the x and y coordinates. After setting the rotation matrix I also rotate the circle because the default orientation
+	// of circle meshes in XVR is shifted by 90 degrees respect to what I want
+	mColorRectangleSelector.SetPosition(mColorRectangle.LocalToWorld([mColorRectangleSelectorPosition.x, mColorRectangleSelectorPosition.y, 0.001 * SCALE_FACTOR]));
+	mColorRectangleSelector.SetRotationMatrix(mColorRectangle.GetRotationMatrix());
+	mColorRectangleSelector.Rotate(90, 1, 0, 0);
+	
+	mPreviewColorObj.SetPosition(mPanel.LocalToWorld(mPreviewColorObjPosition));
+	mPreviewColorObj.SetRotationMatrix(mPanel.GetRotationMatrix());
 }
 
 function ColorPicker::SetColorPickerActive(isActive)
@@ -228,65 +325,40 @@ function ColorPicker::SetColorPickerActive(isActive)
 	mIsColorPickerEnabled = isActive;
 }
 
+function ColorPicker::GetSelectedColor()
+{
+	return mSelectedColor;
+}
+
 function ColorPicker::Draw()
 {
 	mColorBar.Draw();
 	
-	mColorRectangle.Draw();
+	// Shader for the color rectangle. It colors each fragment with its corresponding saturation and value for the given hue
+	mColorRectangleShader.Start();
+		mColorRectangleShader.SetParameter("width", mColorRectangleWidth);
+		mColorRectangleShader.SetParameter("height", mColorRectangleHeight);
+		mColorRectangleShader.SetParameter("hue", mSelectedHueValue);
+		
+		mColorRectangle.Draw();
+	mColorRectangleShader.Stop();
 	
+	mColorRectangleSelector.Draw();
+	
+	// Drwaing the preview color. I couldn't make the material work, meneaning that I couldn't change the material's 
+	// color at runtime, so I had to use a very basic shader that just colors the fragment with the given color
 	mSimpleColorShader.Start();
 		mSimpleColorShader.SetParameter("color", mSelectedColor);
 		
-		mPreviewColor.Draw();
+		mPreviewColorObj.Draw();
 	mSimpleColorShader.Stop();
-}
-
-
-function ColorPicker::GetObj()
-{
-	return mColorPicker;
-}
-
-function ColorPicker::SetPosition(position)
-{
-	mColorPicker.SetPosition(position);
-}
-
-function ColorPicker::GetPosition()
-{
-	return mColorPicker.GetPosition();
-}
-
-function ColorPicker::SetRotationMatrix(matrix)
-{
-	mColorPicker.SetRotationMatrix(matrix);
-}
-
-function ColorPicker::GetRotationMatrix()
-{
-	return mColorPicker.GetRotationMatrix();
-}
-
-function ColorPicker::Rotate(angle, x, y, z)
-{
-	mColorPicker.RotateAbs(angle, x, y, z);
-}
-
-function ColorPicker::SetRotation(angle, x, y, z)
-{
-	mColorPicker.SetRotation(angle, x, y, z);
-}
-
-function ColorPicker::LocalToWorld(point)
-{
-	return mColorPicker.LocalToWorld(point);
 }
 
 function ColorPicker::SetScale(scale)
 {
 	mColorBar.SetScale(scale);
 	mColorRectangle.SetScale(scale);
-	mPreviewColor.SetScale(scale);
+	mPreviewColorObj.SetScale(scale);
 }
 
 function ColorPicker::GetScale()
@@ -309,10 +381,4 @@ function ColorPicker::Unhide()
 function ColorPicker::IsVisible()
 {
 	return mIsVisible;
-}
-
-
-function ColorPicker::Translate(transl)
-{
-	mColorPicker.Translate(transl);
 }

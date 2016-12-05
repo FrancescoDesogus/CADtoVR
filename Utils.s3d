@@ -1,3 +1,8 @@
+
+/********************************************************************************
+ ******************************** DEBUG FUNCTIONS *******************************
+ ********************************************************************************/
+
 function Print(strings, objects)
 {
 	if(valtype(strings) == "A")
@@ -73,7 +78,7 @@ function ConvertValueToString(value)
 	if(valtype(value) == "I")
 		newValueString += sprintf("%d", value);
 	else if(valtype(value) == "R")
-		newValueString += sprintf("%.3f", value);
+		newValueString += sprintf("%f", value);
 	else if(valtype(value) == "B")
 		newValueString += value ? "true" : "false";
 	else if(valtype(value) == "S")
@@ -103,6 +108,100 @@ function ConvertValueToString(value)
 		
 	return newValueString;
 }
+
+/********************************************************************************
+ ******************************** MISCELLANEOUS FUNCTIONS ***********************
+ ********************************************************************************/
+
+/*
+ * Ausiliary function that creates a wall that simulates a glass; the glass has also borders at each sides
+ * 
+ * width: (float) width of the wall
+ * height: (float) height of the wall
+ * borderThickness: (float) thickness of the borders around the glass
+ * lightsRangeMin: (integer) the min number of the range of opengl lights that have to be used in the cel shader to render the glass wall
+ * lightsRangeMax: (integer) the max number of the range of opengl lights that have to be used in the cel shader to render the glass wall
+ */
+function CreateGlassPlane(width, height, borderThickness, borderColor, glassAlpha)
+{
+	var halfWidth = width / 2.0;
+	var halfHeight = height / 2.0;
+	var halfThickness = borderThickness / 2.0;
+	
+	if(glassAlpha == Void)
+		glassAlpha = 0.5;
+	
+	// This is the mesh for the whole plane and the obj that will contain the whole thing. I insert everything as child
+	// of this object in order to make the IsColliding() method work properly with every part of the plane
+	var totalMesh = CVmNewMesh(VRP_PLANE, 1, [-halfWidth, -halfHeight, 0], [halfWidth, halfHeight, 0], 2, 2);
+	var obj = CVmObj(totalMesh);
+	
+	// I don't want the global object to be seen, but I can't simply hide it otherwise it will hide every child;
+	// so I create a transparent material for it
+	var objMaterial = CVmMaterial();
+	objMaterial.diffuse = [0, 0, 0];
+	objMaterial.ambient = [0, 0, 0];
+	objMaterial.specular = [0, 0, 0];
+	objMaterial.transparency = 0.0;
+	totalMesh.ForceMaterial(objMaterial);
+	
+	// The glass mesh is smaller than the wall, because it takes into account the borders
+	var glassMesh = CVmNewMesh(VRP_PLANE, 1, [-halfWidth + borderThickness, -halfHeight + borderThickness, 0], [halfWidth - borderThickness, halfHeight - borderThickness, 0], 2, 2);
+	
+	var glassMaterial = CVmMaterial();
+	glassMaterial.diffuse = [0, 0, 0];
+	glassMaterial.ambient = [0, 0, 0];
+	glassMaterial.specular = [0, 0, 0];
+	glassMaterial.transparency = glassAlpha;
+	
+	glassMesh.ForceMaterial(glassMaterial);
+	
+	var glassWallObj = CVmObj(glassMesh);
+	
+	// Meshes for the borders
+	var verticalBorderMesh = CVmNewMesh(VRP_PLANE, 1, [-halfThickness, -halfHeight, 0], [halfThickness, halfHeight, 0], 2, 2);
+	var horizzontalBorderMesh = CVmNewMesh(VRP_PLANE, 1, [-halfWidth + halfThickness, -halfThickness, 0], [halfWidth - halfThickness, halfThickness, 0], 2, 2);
+	
+	var leftBorderObj = CVmObj(verticalBorderMesh);
+	var rightBorderObj = CVmObj(verticalBorderMesh);
+	var topBorderObj = CVmObj(horizzontalBorderMesh);
+	var bottomBorderObj = CVmObj(horizzontalBorderMesh);
+	
+	// Mesh for the silhouette lines used in the borders
+	var silhouetteLineHalfWidth = 0.02 * SCALE_FACTOR;
+	
+	var outerSilhouetteVerticalLine = CVmNewMesh(VRP_PLANE, 1, [-silhouetteLineHalfWidth, -halfHeight, 0], [silhouetteLineHalfWidth, halfHeight, 0], 2, 2);
+	var outerSilhouetteHorizzontalLine = CVmNewMesh(VRP_PLANE, 1, [-silhouetteLineHalfWidth, -halfWidth, 0], [silhouetteLineHalfWidth, halfWidth, 0], 2, 2);
+
+	// Black material for the lines
+	var silhouetteMaterial = CVmMaterial();
+	silhouetteMaterial.diffuse = borderColor;
+	silhouetteMaterial.ambient = [0, 0, 0];
+	silhouetteMaterial.specular = [0, 0, 0];
+	
+	outerSilhouetteVerticalLine.ForceMaterial(silhouetteMaterial);
+	outerSilhouetteHorizzontalLine.ForceMaterial(silhouetteMaterial);
+	
+	var outerSilhouetteLeft = CVmObj(outerSilhouetteVerticalLine);
+	var outerSilhouetteRight = CVmObj(outerSilhouetteVerticalLine);
+	var outerSilhouetteTop = CVmObj(outerSilhouetteHorizzontalLine);
+	var outerSilhouetteBottom = CVmObj(outerSilhouetteHorizzontalLine);
+	
+	outerSilhouetteTop.Rotate(90, 0, 0, 1);
+	outerSilhouetteBottom.Rotate(90, 0, 0, 1);
+	
+	// Adding the borders to the wall
+	glassWallObj.AddChild(leftBorderObj, halfWidth - halfThickness, 0, 0);
+	glassWallObj.AddChild(rightBorderObj, -halfWidth + halfThickness, 0, 0);
+	glassWallObj.AddChild(topBorderObj, 0, halfHeight - halfThickness, 0);
+	glassWallObj.AddChild(bottomBorderObj, 0, -halfHeight + halfThickness, 0);
+	
+	// Adding the whole thing as child of the total object
+	obj.AddChild(glassWallObj, 0, 0, 0);
+	
+	return obj;
+}
+
 
 /*
  * This function rotates (or "shifts") the given array to the right. 
@@ -180,6 +279,10 @@ function HSVtoRGB(hsv)
     
     return [r, g, b];
 }
+
+/********************************************************************************
+ ******************************** MATH FUNCTIONS ********************************
+ ********************************************************************************/
 
 /*
  * This function checks if a line segment intersects the given object; if it does, it returns the contact point, or Void otherwise
@@ -288,94 +391,4 @@ function ComputeNormalOfPlanarObject(object)
 	var normal = Norm(vec1 ^ vec2);
 	
 	return normal;
-}
-
-
-/*
- * Ausiliary function that creates a wall that simulates a glass; the glass has also borders at each sides
- * 
- * width: (float) width of the wall
- * height: (float) height of the wall
- * borderThickness: (float) thickness of the borders around the glass
- * lightsRangeMin: (integer) the min number of the range of opengl lights that have to be used in the cel shader to render the glass wall
- * lightsRangeMax: (integer) the max number of the range of opengl lights that have to be used in the cel shader to render the glass wall
- */
-function CreateGlassPlane(width, height, borderThickness, borderColor, glassAlpha)
-{
-	var halfWidth = width / 2.0;
-	var halfHeight = height / 2.0;
-	var halfThickness = borderThickness / 2.0;
-	
-	if(glassAlpha == Void)
-		glassAlpha = 0.5;
-	
-	// This is the mesh for the whole plane and the obj that will contain the whole thing. I insert everything as child
-	// of this object in order to make the IsColliding() method work properly with every part of the plane
-	var totalMesh = CVmNewMesh(VRP_PLANE, 1, [-halfWidth, -halfHeight, 0], [halfWidth, halfHeight, 0], 2, 2);
-	var obj = CVmObj(totalMesh);
-	
-	// I don't want the global object to be seen, but I can't simply hide it otherwise it will hide every child;
-	// so I create a transparent material for it
-	var objMaterial = CVmMaterial();
-	objMaterial.diffuse = [0, 0, 0];
-	objMaterial.ambient = [0, 0, 0];
-	objMaterial.specular = [0, 0, 0];
-	objMaterial.transparency = 0.0;
-	totalMesh.ForceMaterial(objMaterial);
-	
-	// The glass mesh is smaller than the wall, because it takes into account the borders
-	var glassMesh = CVmNewMesh(VRP_PLANE, 1, [-halfWidth + borderThickness, -halfHeight + borderThickness, 0], [halfWidth - borderThickness, halfHeight - borderThickness, 0], 2, 2);
-	
-	var glassMaterial = CVmMaterial();
-	glassMaterial.diffuse = [0, 0, 0];
-	glassMaterial.ambient = [0, 0, 0];
-	glassMaterial.specular = [0, 0, 0];
-	glassMaterial.transparency = glassAlpha;
-	
-	glassMesh.ForceMaterial(glassMaterial);
-	
-	var glassWallObj = CVmObj(glassMesh);
-	
-	// Meshes for the borders
-	var verticalBorderMesh = CVmNewMesh(VRP_PLANE, 1, [-halfThickness, -halfHeight, 0], [halfThickness, halfHeight, 0], 2, 2);
-	var horizzontalBorderMesh = CVmNewMesh(VRP_PLANE, 1, [-halfWidth + halfThickness, -halfThickness, 0], [halfWidth - halfThickness, halfThickness, 0], 2, 2);
-	
-	var leftBorderObj = CVmObj(verticalBorderMesh);
-	var rightBorderObj = CVmObj(verticalBorderMesh);
-	var topBorderObj = CVmObj(horizzontalBorderMesh);
-	var bottomBorderObj = CVmObj(horizzontalBorderMesh);
-	
-	// Mesh for the silhouette lines used in the borders
-	var silhouetteLineHalfWidth = 0.02 * SCALE_FACTOR;
-	
-	var outerSilhouetteVerticalLine = CVmNewMesh(VRP_PLANE, 1, [-silhouetteLineHalfWidth, -halfHeight, 0], [silhouetteLineHalfWidth, halfHeight, 0], 2, 2);
-	var outerSilhouetteHorizzontalLine = CVmNewMesh(VRP_PLANE, 1, [-silhouetteLineHalfWidth, -halfWidth, 0], [silhouetteLineHalfWidth, halfWidth, 0], 2, 2);
-
-	// Black material for the lines
-	var silhouetteMaterial = CVmMaterial();
-	silhouetteMaterial.diffuse = borderColor;
-	silhouetteMaterial.ambient = [0, 0, 0];
-	silhouetteMaterial.specular = [0, 0, 0];
-	
-	outerSilhouetteVerticalLine.ForceMaterial(silhouetteMaterial);
-	outerSilhouetteHorizzontalLine.ForceMaterial(silhouetteMaterial);
-	
-	var outerSilhouetteLeft = CVmObj(outerSilhouetteVerticalLine);
-	var outerSilhouetteRight = CVmObj(outerSilhouetteVerticalLine);
-	var outerSilhouetteTop = CVmObj(outerSilhouetteHorizzontalLine);
-	var outerSilhouetteBottom = CVmObj(outerSilhouetteHorizzontalLine);
-	
-	outerSilhouetteTop.Rotate(90, 0, 0, 1);
-	outerSilhouetteBottom.Rotate(90, 0, 0, 1);
-	
-	// Adding the borders to the wall
-	glassWallObj.AddChild(leftBorderObj, halfWidth - halfThickness, 0, 0);
-	glassWallObj.AddChild(rightBorderObj, -halfWidth + halfThickness, 0, 0);
-	glassWallObj.AddChild(topBorderObj, 0, halfHeight - halfThickness, 0);
-	glassWallObj.AddChild(bottomBorderObj, 0, -halfHeight + halfThickness, 0);
-	
-	// Adding the whole thing as child of the total object
-	obj.AddChild(glassWallObj, 0, 0, 0);
-	
-	return obj;
 }
