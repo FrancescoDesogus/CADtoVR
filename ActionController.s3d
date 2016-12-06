@@ -43,6 +43,7 @@ class ActionController
 	SetDrawRay(drawRay, rayEnd, contactNormal);
 	IsPressingPrimaryButton();
 	PrimaryButtonSinglePressed();
+	GetComfortModeDirection();
 };
 
 
@@ -60,9 +61,9 @@ function ActionController::ActionController(viveController, inputManager)
 	var pointingCircleMesh = CVmNewMesh(VRP_CIRCLE, 30, 0.04 * SCALE_FACTOR, 1); 
 
 	var pointingCircleMaterial = CVmMaterial();
-	pointingCircleMaterial.Ambient = [0, 0, 0];
-	pointingCircleMaterial.diffuse = mMenuRayColor;
-	pointingCircleMaterial.Specular = [0, 0, 0];
+//	pointingCircleMaterial.Ambient = [0, 0, 0];
+//	pointingCircleMaterial.diffuse = mMenuRayColor;
+//	pointingCircleMaterial.Specular = [0, 0, 0];
 	pointingCircleMaterial.SetTexture(CVmTexture("Textures/selectionCircle.png"));
 	pointingCircleMesh.SetMaterial(pointingCircleMaterial);
 	
@@ -154,7 +155,7 @@ function ActionController::SetDrawRay(drawRay, rayEnd, contactNormal)
 	{
 		mRayEnd = rayEnd;
 		
-		mPointingCircle.SetPosition(mRayEnd - contactNormal * 0.002 * SCALE_FACTOR);
+		mPointingCircle.SetPosition(mRayEnd - contactNormal * 0.003 * SCALE_FACTOR);
 		
 		// Now I need to rotate the circle to face the normal vector, so that it points in the right direction.
 		// To compute the angle around which to rotate the object, I compute the cross product between this vector and the up vector (the vector
@@ -176,7 +177,7 @@ function ActionController::Draw()
 	
 	if(mDrawRay)
 	{
-		var rayOrigin = GetPosition();
+		var rayOrigin = GetControllerTipCoordinates();
 		
 		// Rendering of the ray
 		mDashedLineShader.Start();
@@ -196,7 +197,10 @@ function ActionController::Draw()
 			glEnd();
 		mDashedLineShader.Stop();
 		
+//		glDisable(GL_BLEND);
+//   		glDepthMask(GL_TRUE);
 		mPointingCircle.Draw();
+//		glEnable(GL_BLEND);
 	}
 }
 
@@ -233,6 +237,11 @@ function ActionController::GetControllerTipCoordinates()
 function ActionController::GetDirection()
 {
 	return mViveController.GetDirection();
+}
+
+function ActionController::GetComfortModeDirection()
+{
+	return mViveController.GetComfortModeDirection();
 }
 
 function ActionController::SetPosition(position)

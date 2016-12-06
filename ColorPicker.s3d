@@ -206,7 +206,7 @@ function ColorPicker::UpdateLogic(dt)
 	{
 		// Now I need to check if the ActionController intersects the color bar; I need a ray
 		var rayOrigin = mActionController.GetPosition();
-		var rayEnd = mActionController.GetDirection() * CameraGetCurrent().GetZFar();
+		var rayEnd = mActionController.GetComfortModeDirection() * CameraGetCurrent().GetZFar();
 		
 		// Debug check
 		if(USE_DEBUG_MOUSE)

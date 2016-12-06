@@ -154,10 +154,10 @@ function Scene::Render()
  	glLight(GL_LIGHT1, GL_POSITION, [mLight1Position.x, mLight1Position.y, mLight1Position.z, 1.0]); 
  	glLight(GL_LIGHT2, GL_POSITION, [mLight2Position.x, mLight2Position.y, mLight2Position.z, 1.0]);
  	
- 	if(!mIsVRon)
- 		SetClearColor(0.9, 0.9, 0.9);
-	else
- 		glClearColor(0.9, 0.9, 0.9, 1.0);
+// 	if(!mIsVRon)
+// 		SetClearColor(0.9, 0.9, 0.9);
+//	else
+// 		glClearColor(0.9, 0.9, 0.9, 1.0);
 			
 	var cameraPosition = mCamera.GetPosition() - mOpenglTranslationOffset;
 

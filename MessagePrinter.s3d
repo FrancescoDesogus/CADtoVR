@@ -24,9 +24,12 @@ class MessagePrinter
 	// Variable that is true if the console is visible
 	var mIsVisible;
 	
+	var mIsVRon;
+	
 	// Public functions
-	Draw();
+	Draw(eye);
 	Print(string, value, color);
+	SetTextPosition(text, index);
 	IsVisible();
 	SetVisibility(visible);
 };
@@ -34,8 +37,10 @@ class MessagePrinter
 /*
  * Constructor
  */
-function MessagePrinter::MessagePrinter()
+function MessagePrinter::MessagePrinter(isVRon)
 {
+	mIsVRon = isVRon;
+	
 	// To draw the console I create a orthographic projection that has as size range [-1, -1] to [1, 1], meaning that the 
 	// values of the objects drawn has to be inside this range to be inside the screen. So the size of the console is given
 	// in this term (for example, a vlaue of 1 for the width is half the screen)
@@ -45,7 +50,7 @@ function MessagePrinter::MessagePrinter()
 	// Creating the console object with the Util faction
 	mConsole = CreateGlassPlane(mConsoleWidth, mConsoleHeight, 0.01 * SCALE_FACTOR, [0.5, 0.5, 0.5], 0.5);
 	
-	// Setting the console position on the bottom left part of the screen
+		// Setting the console position on the bottom left part of the screen
 	mConsole.SetPosition(-1 + mConsoleWidth / 2.0 + 0.05, -1 + mConsoleHeight / 2.0 + 0.05, 0);
 //	mConsole.SetPosition(1 - mConsoleWidth / 2.0 - 0.05, -1 + mConsoleHeight / 2.0 + 0.05, 0);
 		
@@ -144,19 +149,19 @@ function MessagePrinter::Print(string, value, color)
 		RotateArrayByOne(mTexts);
 		
 		// Now I iterate over all the Text objects and I compute again their position, with respect to their position in the array
-		for(var i = 0; i < len(mTexts); i++)
-		{
-			var txt = mTexts[i];
-			
-			// To compute the position I take as reference the console object, and I compute the y by looking at 
-			// the position in the array of this particular Text object
-			var newPos = mConsole.GetPosition();
-			newPos.x = newPos.x - mConsoleWidth / 2.0 + txt.GetWidthOfLine(0) + 0.01;
-			newPos.y = newPos.y + mConsoleHeight / 2.0 - (txt.GetFontHeight()) * (i + 1);
-			
-			// Finally I can set the position
-			txt.SetPosition(newPos);
-		}
+//		for(var i = 0; i < len(mTexts); i++)
+//		{
+//			var txt = mTexts[i];
+//			
+//			// To compute the position I take as reference the console object, and I compute the y by looking at 
+//			// the position in the array of this particular Text object
+//			var newPos = mConsole.GetPosition();
+//			newPos.x = newPos.x - mConsoleWidth / 2.0 + txt.GetWidthOfLine(0) + 0.01;
+//			newPos.y = newPos.y + mConsoleHeight / 2.0 - (txt.GetFontHeight()) * (i + 1);
+//			
+//			// Finally I can set the position
+//			txt.SetPosition(newPos);
+//		}
 	}
 	// If I didn't use all the pre-allocated objects yet, don't need to rotate the array and stuff. I just take the last
 	// element in the array, change its text and color and position it
@@ -166,11 +171,11 @@ function MessagePrinter::Print(string, value, color)
 		newText.LoadString(newString);
 		newText.SetColor(textColor);
 		
-		var newPos = mConsole.GetPosition();
-		newPos.x = newPos.x - mConsoleWidth / 2.0 + newText.GetWidthOfLine(0) + 0.01;
-		newPos.y = newPos.y + mConsoleHeight / 2.0 - (newText.GetFontHeight()) * (mTextsArraySize + 1);
-		
-		newText.SetPosition(newPos);
+//		var newPos = mConsole.GetPosition();
+//		newPos.x = newPos.x - mConsoleWidth / 2.0 + newText.GetWidthOfLine(0) + 0.01;
+//		newPos.y = newPos.y + mConsoleHeight / 2.0 - (newText.GetFontHeight()) * (mTextsArraySize + 1);
+//		
+//		newText.SetPosition(newPos);
 		
 		mTextsArraySize++;
 	}
@@ -179,13 +184,30 @@ function MessagePrinter::Print(string, value, color)
 	outputln(newString);
 }
 
+function MessagePrinter::SetTextPosition(text, index)
+{
+	var newPos = mConsole.GetPosition();
+	newPos.x = newPos.x - mConsoleWidth / 2.0 + text.GetWidthOfLine(0) + 0.01;
+	newPos.y = newPos.y + mConsoleHeight / 2.0 - (text.GetFontHeight()) * (index + 1);
+		
+	text.SetPosition(newPos);
+}
+
 /*
  * This method draws the console as HUD
  */
-function MessagePrinter::Draw()
+function MessagePrinter::Draw(eye)
 {
 	if(mIsVisible)
 	{
+		if(eye == 1)
+			mConsole.SetPosition(-1 + mConsoleWidth + 0.05, -1 + mConsoleHeight + 0.05, 0);
+		else if(eye == 2)
+			mConsole.SetPosition(-1 + mConsoleWidth / 2.0 + 0.05, -1 + mConsoleHeight + 0.05, 0);
+			
+		for(var i = 0; i < len(mTexts); i++)
+			SetTextPosition(mTexts[i], i);
+		
 		var viewport = array(4);
 		viewport = glget(GL_VIEWPORT);
 		

@@ -110,10 +110,12 @@ function InteractionManager::Draw()
 {
 //	glDepthMask(GL_FALSE);
 	mMenuController.Draw();
-	mActionController.Draw();	
+//	mActionController.Draw();	
 //	glDepthMask(GL_TRUE);
 	
 	// Since the menu are composed of semi-transparent panels, it should be rendered last
 	mToolsMenu.Draw();
+	mActionController.Draw();
+	
 }
 

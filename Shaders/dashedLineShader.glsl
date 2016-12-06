@@ -10,8 +10,8 @@ void main()
 	
 	// I pass the vertex position to the shader; I pass the position in world coordinates; To do that I first convert 
 	// the vertex into eye-space coordinates, and then apply the inverse
-	//position = (gl_ModelViewMatrixInverse * (gl_ModelViewMatrix * gl_Vertex)).xyz;
-	position = (gl_ModelViewMatrix * gl_Vertex).xyz;
+	position = (gl_ModelViewMatrixInverse * (gl_ModelViewMatrix * gl_Vertex)).xyz;
+	//position = (gl_ModelViewMatrix * gl_Vertex).xyz;
 }
 
 [FRAGMENT SHADER]

@@ -120,7 +120,7 @@ function ToolsMenu::UpdateLogic(dt)
 {
 	// First, I need to check if the action controller is pointing the menu
 	var rayOrigin = mActionController.GetPosition();
-	var rayEnd = rayOrigin + mActionController.GetDirection() * CameraGetCurrent().GetZFar();
+	var rayEnd = rayOrigin + mActionController.GetComfortModeDirection() * CameraGetCurrent().GetZFar();
 	
 	// If I press 2 with the keyboard this boolean becomes true and I can point with the mouse instead of the controller
 	// for debugging. I use this boolean in a lot of places in the code

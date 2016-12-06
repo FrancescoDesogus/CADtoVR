@@ -241,7 +241,7 @@ function ApplicationManager::ApplicationManager(HMD)
 	mIsTeleporting = false;
 	mTeleportDistanceThreshold = 30.0 * SCALE_FACTOR;
 	
-	_out = MessagePrinter();
+	_out = MessagePrinter(mIsVRon);
 	mDebugConsoleVisibility = true;
 	mDebugConsoleVisibilityButtonPressed = false;
 	mDebugMouseButtonPressed = false;
@@ -259,7 +259,9 @@ function ApplicationManager::Render()
 	glEnable(GL_NORMALIZE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-				
+	
+	SetClearColor(0.9, 0.9, 0.9);
+ 		
 	// Rendering the scene and applying post-processing to it (if it doesn't have to apply it this method won't do a thing)
 	XVRRendering(0);
 
@@ -270,6 +272,8 @@ function ApplicationManager::Render()
 			
 			glEnable (GL_BLEND);
 			glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);	
+			
+			glClearColor(0.9, 0.9, 0.9, 1.0);
 			
 			mHMD.frame_left();
 				XVRRendering(1);
@@ -308,7 +312,7 @@ function ApplicationManager::XVRRendering(eye)
 		var raycastOrigin;
 		
 		if(mIsVRon)
-			raycastOrigin = mInputManager.GetController(mControllerBeingUsedIndex).GetPosition();
+			raycastOrigin = mInputManager.GetController(mControllerBeingUsedIndex).GetControllerTipCoordinates();
 		else 
 			raycastOrigin = mCamera.GetPosition() - mOpenglTranslationOffset - [-0.1 * SCALE_FACTOR, 0.1 * SCALE_FACTOR, 0.0 * SCALE_FACTOR];
 		
@@ -417,7 +421,7 @@ function ApplicationManager::XVRRendering(eye)
 	if(!mIsVRon)
 		DrawCrosshair();
 		
-	_out.Draw();
+	_out.Draw(eye);
 		
 		
 	// If there is a fade transition going on or the level is ending I fade to black the screen (I check if the level is ending so that when it is
@@ -486,8 +490,9 @@ function ApplicationManager::UpdateLogic(dt)
 		if(mIsVRon)
 		{
 			var controller = mInputManager.GetController(mControllerBeingUsedIndex);
+//			raycastOrigin = controller.GetControllerTipCoordinates();
 			raycastOrigin = controller.GetPosition();
-			raycastEnd = raycastOrigin + controller.GetDirection() * mCamera.GetZFar();
+			raycastEnd = raycastOrigin + controller.GetComfortModeDirection() * mCamera.GetZFar();
 		}
 		else
 		{
