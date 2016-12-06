@@ -39,9 +39,6 @@ class Scene
 	// This variable holds the index of the controller currently being used for drawing (it's 0 if the player isn't drawing)
 	var mControllerBeingUsedIndex;
 	
-	
-	
-	
 	var mObject;
 	
 	var mInteractionManager;
@@ -78,6 +75,7 @@ function Scene::Scene(isVRon, inputManager)
 	mControllerBeingUsedIndex = 0;
 	
 	mObject = CVmObj(CVmNewMesh("Meshes/lamborghini.aam"));
+//	mObject = CVmObj(CVmNewMesh(VRP_TUBE, 30, 2 * SCALE_FACTOR, 5 * SCALE_FACTOR, 3 * SCALE_FACTOR, 1));
 		
 	if(mIsVRon)
 	{
@@ -164,7 +162,7 @@ function Scene::Render()
 	var cameraPosition = mCamera.GetPosition() - mOpenglTranslationOffset;
 
 	globalSkybox.Render(cameraPosition);
-	
+
 	mObject.Draw();
 	
 //	mActionController.Draw();		

@@ -132,11 +132,11 @@ function ActionController::UpdateLogic(dt, debugMode)
 		if(KeyPressed(VK_UP))
 			zOffset -= 0.05 * SCALE_FACTOR;
 			
-//		if(KeyPressed(VK_NUMPAD1))
-//			yOffset += 1.0 * SCALE_FACTOR;
+		if(KeyPressed(VK_NUMPAD1))
+			yOffset += 0.05 * SCALE_FACTOR;
 //		
-//		if(KeyPressed(VK_RSHIFT))
-//			yOffset -= 1.0 * SCALE_FACTOR;
+		if(KeyPressed(VK_RSHIFT))
+			yOffset -= 0.05 * SCALE_FACTOR;
 //			
 		mViveController.SetPosition(mViveController.GetPosition() + [xOffset, yOffset, zOffset]);
 	}
