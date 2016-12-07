@@ -20,6 +20,8 @@ class ToolsMenu
 	var mPanelsPositionOffset;
 	var mPanelsRotationQuaternion;
 	
+	var mPanelsRotationAngle;
+	
 	// If one of the panels is hit by the action controller ray, these vector contain the contact point and the normal
 	var mIntersectionPoint;
 	var mIntersectionNormal;
@@ -42,6 +44,10 @@ class ToolsMenu
 	
 	// This is a reference to the ActionsListManager object that is in charge of the undo/redo mechanism
 	var mActionsListManager;
+	
+	
+	var mToolsMenuCubeSize;
+	var mToolsMenuCube; 
 	
 	
 	// Public functions
@@ -94,9 +100,20 @@ function ToolsMenu::ToolsMenu(menuController, actionController, actionsListManag
 	mPanelsPositionOffset = {};
 	mPanelsRotationQuaternion = {};
 	
+	mPanelsRotationAngle = 0;
+	
+	mToolsMenuCubeSize = 1.0 * SCALE_FACTOR;
+	var cubeHalfSize = mToolsMenuCubeSize / 2.0;
+	
+	var cubeMenuMesh = CVmNewMesh(VRP_BOX, 1, [-cubeHalfSize, -cubeHalfSize, -cubeHalfSize], [cubeHalfSize, cubeHalfSize, cubeHalfSize]);
+	
+	mToolsMenuCube = CVmObj(cubeMenuMesh);
+	
+	
 	// Creation of the selection panel
 	var selectionPanelObj = SelectionPanel(actionController, mAnimator, mActionsListManager);
-	var positionOffset = [0, mMenuController.GetHeight() / 2.0, selectionPanelObj.GetHeight() / 3.0];
+//	var positionOffset = [0, mMenuController.GetHeight() / 2.0, selectionPanelObj.GetHeight() / 3.0];
+	var positionOffset = [0, cubeHalfSize, 0];
 	var quaternion = EulerToQuaternion([-90, 0, 0]);
 	
 	aadd(mPanels, selectionPanelObj);
@@ -105,7 +122,8 @@ function ToolsMenu::ToolsMenu(menuController, actionController, actionsListManag
 	
 	// Creation of the measuring panel
 	selectionPanelObj = MeasuringPanel(actionController, mAnimator, mActionsListManager);
-	positionOffset = [-selectionPanelObj.GetWidth() / 2.0, -selectionPanelObj.GetHeight() / 3.0, mMenuController.GetDepth() / 3.0];
+//	positionOffset = [-selectionPanelObj.GetWidth() / 2.0, -selectionPanelObj.GetHeight() / 3.0, mMenuController.GetDepth() / 3.0];
+	positionOffset = [-cubeHalfSize, 0, 0];
 	quaternion = EulerToQuaternion([0, -90, 90]);
 	
 	aadd(mPanels, selectionPanelObj);
@@ -137,10 +155,30 @@ function ToolsMenu::UpdateLogic(dt)
 	var contactNormal;
 	var panelIndex = -1;
 	
-//	static var rot = 0;
-//	
-//	if(Keypressed("M"))
-//		rot += 0.1;
+	if(Keypressed("M"))
+		mPanelsRotationAngle += 1 % 360;
+	if(Keypressed("N"))
+		mPanelsRotationAngle -= 1 % 360;
+		
+//	mToolsMenuCubeSize
+//	mToolsMenuCube.SetPosition(mMenuController.GetPosition());
+	mToolsMenuCube.SetPosition(mMenuController.LocalToWorld([0, -mToolsMenuCubeSize / 4.0, mToolsMenuCubeSize / 3.0]));
+	mToolsMenuCube.SetRotationMatrix(mMenuController.GetRotationMatrix());
+	
+	var currentRotation = mMenuController.GetRotationMatrix();
+	var rotAxis = Norm(mMenuController.GetDirection());
+//	mMenuController.Rotate(mPanelsRotationAngle, rotAxis.x, rotAxis.y, rotAxis.z);
+
+//	var currentRotation = mMenuController.GetRotationMatrix();
+//	var rotAxis = Norm(mMenuController.GetDirection());
+//	var rotAxis = Norm(Norm(mToolsMenuCube.LocalToWorld([0, 0, -1]) - mToolsMenuCube.GetPosition()));
+	mToolsMenuCube.RotateABS(mPanelsRotationAngle, rotAxis.x, rotAxis.y, rotAxis.z);
+	
+//	var dir = [0.000000, 0.601815, -0.798635];
+//	mMenuController.SetRotation(45, dir.x, dir.y, dir.z);
+//	mToolsMenuCube.SetRotation(45, dir.x, dir.y, dir.z);
+	
+//	_out.print({"vive dir", "cube dir", {mMenuController.GetDirection(), rotAxis}});
 	
 	// I iterate over all the panels to update their position and to check intersections
 	for(var i = 0; i < len(mPanels); i++)
@@ -148,21 +186,19 @@ function ToolsMenu::UpdateLogic(dt)
 		var panelObj = mPanels[i];
 		
 		// Updating the position of the panel with respect to the menu controller
-		panelObj.SetPosition(mMenuController.LocalToWorld(mPanelsPositionOffset[i]));
-		panelObj.SetRotationMatrix(mMenuController.GetRotationMatrix());
+		panelObj.SetRotationMatrix(currentRotation);
+//		panelObj.SetRotationMatrix(mMenuController.GetRotationMatrix());
 		
 		// I now rotate the panel according to its orientation. This is the only practical way I found. This function
 		// returns the angle of the quaternion in radiants, so I need to convert it
 		var rotation = QuaternionToAxisAngle(mPanelsRotationQuaternion[i]);
 		panelObj.Rotate(rotation[3] * RAD_TO_GRAD, rotation.x, rotation.y, rotation.z);
+				
+		panelObj.SetPosition(mToolsMenuCube.LocalToWorld(mPanelsPositionOffset[i]));
+		panelObj.Rotate(mPanelsRotationAngle, 0, 1, 0);
 		
-		
-//		var oldPivotPoint = panelObj.GetPosition();
-//		panelObj.SetPivotPoint(panelObj.LocalToWorld(mMenuController.GetPosition()));
-//		
-//		panelObj.Rotate(rot, 0, 0, 1);
-//		
-//		panelObj.SetPivotPoint([0, 0, 0]);
+		_out.print({"angle", "dir", "actual dir"}, {mPanelsRotationAngle, mMenuController.GetDirection(), Norm(mMenuController.GetDirection())});
+//		_out.print("before", modulus(panelObj.GetPosition() - mMenuController.LocalToWorld([0,0,0])));
 		
 		var findContact = false;
 		var contactPointTmp;
@@ -188,6 +224,10 @@ function ToolsMenu::UpdateLogic(dt)
 		// I update the logic of the panel
 		panelObj.UpdateLogic(dt);
 	}
+	
+//	mToolsMenuCube.SetRotationMatrix(mMenuController.GetRotationMatrix());
+	
+//	_out.print("after", modulus(mPanels[0].LocalToWorld([0,0,0]) - mMenuController.LocalToWorld([0,0,0])));
 	
 	// If a panel was intersected, I check if any icon was intersected, and save the contact point for later (it will be used
 	// by the MenuController class to pass it to the ActionController class to draw the ray
@@ -286,6 +326,36 @@ function ToolsMenu::Draw()
 {
 	for(var i = 0; i < len(mPanels); i++)
 		mPanels[i].Draw();
+		
+//	mToolsMenuCube.draw();
+
+
+	var start = mToolsMenuCube.GetPosition();
+//	var end = start + [0.000000, 0.601815, -0.798635] * 10;
+	var end = start + mMenuController.GetDirection() * 10;
+	
+	var vec = Norm(start - end);
+			
+	// To compute the angle around which to rotate the object, I compute the cross product between this vector and the up vector (the vector
+	// that tells me which way is up); the result will be a vector perpendicular to the 2, which I normalize to use it as a normal.
+	// I then switch sign, otherwise it turns on the opposite side
+	var axis = -Norm(vec ^ [0, 1, 0]);
+	
+	// I now compute the angle for the rotation. The formula derives from "easy" trigonometry (lookup "finding angle between 2 vectors").
+	// I'm not sure why the final angle is shifted by 180 degrees; that's why I subtract 180
+	var angle = acos((Norm(vec) * [0, 1, 0])) * RAD_TO_GRAD - 180; 
+
+	// Creating the new mesh, a very thin box, as tall as the distance between the 2 points
+	static var stickMesh = CVmNewMesh(VRP_BOX, 0, [0.0, 0.0, 0.0], [0.003 * SCALE_FACTOR, Modulus(end - start), 0.001 * SCALE_FACTOR]); 
+	static var line = CVmObj(stickMesh);
+	
+	// Since the center of the box is at its feet, moving it at the coordinates of the previous point and then applying the rotation works perfectly
+	line.SetPosition(start);
+	line.SetRotation(angle, axis.x, axis.y, axis.z);
+	line.Draw();
+//	mToolsMenuCube.draw();
+//	_out.print({mToolsMenuCube.GetPosition(), mToolsMenuCube.GetPosition() + [0.000000, 0.601815, -0.798635] * 10});
+	
 }
 
 //function ToolsMenu::GetObj()
