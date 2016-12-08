@@ -31,6 +31,7 @@ class ActionController
 	SetRotationMatrix(matrix);
 	GetRotationMatrix();
 	Rotate(angle, x, y, z);
+	RotateABS(angle, x, y, z);
 	SetRotation(angle, x, y, z);
 	LocalToWorld(point);
 	Hide();
@@ -110,9 +111,9 @@ function ActionController::UpdateLogic(dt, debugMode)
 			rotZ -= 1 * multiplier;
 		
 		mViveController.SetRotation(0, 1, 0, 0);
-		mViveController.Rotate(rotY, 1, 0, 0);
-		mViveController.Rotate(rotX, 0, 1, 0);
-		mViveController.Rotate(rotZ, 0, 0, 1);
+		mViveController.RotateABS(rotY, 1, 0, 0);
+		mViveController.RotateABS(rotX, 0, 1, 0);
+		mViveController.RotateABS(rotZ, 0, 0, 1);
 		
 		static var xOffset = 0;
 		static var yOffset = 0;
@@ -268,6 +269,11 @@ function ActionController::GetRotationMatrix()
 function ActionController::Rotate(angle, x, y, z)
 {
 	mViveController.Rotate(angle, x, y, z);
+}
+
+function ActionController::RotateABS(angle, x, y, z)
+{
+	mViveController.RotateABS(angle, x, y, z);
 }
 
 function ActionController::SetRotation(angle, x, y, z)

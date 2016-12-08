@@ -42,23 +42,23 @@ function OnInit(params)
 	
 	HMD = CVmExternDLL( "FrancoDLL.dll" );
 	
-	HMD.__AddFunction( C_INT, "IsVRactive");	
-	HMD.__AddFunction( C_PFLOAT_2, "GetControllersIndex");	
-	HMD.__AddFunction( C_VOID, "SceneBegin");
-	HMD.__AddFunction( C_VOID, "frame_left");
-	HMD.__AddFunction( C_VOID, "frame_right");
-	HMD.__AddFunction( C_VOID, "SceneEnd");
-	HMD.__AddFunction( C_PFLOAT_16, "GetControllerMatrix", C_INT);
-	HMD.__AddFunction( C_PFLOAT_16, "GetCameraMatrix");
-	HMD.__AddFunction( C_PFLOAT_2, "GetTouchpadCoord", C_INT);
-	HMD.__AddFunction( C_PFLOAT_2, "GetTriggerCoord", C_INT);
-	HMD.__AddFunction( C_INT, "IsMenuPressed", C_INT);
-	HMD.__AddFunction( C_INT, "IsSystemButtonPressed", C_INT);
-	HMD.__AddFunction( C_INT, "IsTriggerPressed", C_INT);
-	HMD.__AddFunction( C_INT, "IsGripPressed", C_INT);
-	HMD.__AddFunction( C_INT, "IsTouchpadPressed", C_INT);
-	HMD.__AddFunction( C_VOID, "VibrateController", C_INT, C_INT);
-	HMD.__AddFunction( C_PFLOAT_2, "GetPlayAreaSize");
+	HMD.__AddFunction(C_INT, "IsVRactive");	
+	HMD.__AddFunction(C_PFLOAT_2, "GetControllersIndex");	
+	HMD.__AddFunction(C_VOID, "SceneBegin");
+	HMD.__AddFunction(C_VOID, "frame_left");
+	HMD.__AddFunction(C_VOID, "frame_right");
+	HMD.__AddFunction(C_VOID, "SceneEnd");
+	HMD.__AddFunction(C_PFLOAT_16, "GetControllerMatrix", C_INT);
+	HMD.__AddFunction(C_PFLOAT_16, "GetCameraMatrix");
+	HMD.__AddFunction(C_PFLOAT_2, "GetTouchpadCoord", C_INT);
+	HMD.__AddFunction(C_PFLOAT_2, "GetTriggerCoord", C_INT);
+	HMD.__AddFunction(C_INT, "IsMenuPressed", C_INT);
+	HMD.__AddFunction(C_INT, "IsSystemButtonPressed", C_INT);
+	HMD.__AddFunction(C_INT, "IsTriggerPressed", C_INT);
+	HMD.__AddFunction(C_INT, "IsGripPressed", C_INT);
+	HMD.__AddFunction(C_INT, "IsTouchpadPressed", C_INT);
+	HMD.__AddFunction(C_VOID, "VibrateController", C_INT, C_INT);
+	HMD.__AddFunction(C_PFLOAT_2, "GetPlayAreaSize");
 	
 	mApplicationManager = ApplicationManager(HMD);
 	

@@ -21,6 +21,9 @@ class InteractionManager
 	// ActionsListManager object that is in charge of the undo/redo mechanism
 	var mActionsListManager;
 	
+	// This float holds the x coordinate of the touchpad of the menu controller from the last tick; used to rotate menu panels
+	var mPreviousTouchpadXcoord;
+	
 	
 	// Public functions
 	UpdateLogic(dt, debugMode);
@@ -45,6 +48,9 @@ function InteractionManager::InteractionManager(menuController, actionController
 	
 	// Creating the tool menu object
 	mToolsMenu = ToolsMenu(mMenuController, mActionController, mActionsListManager);
+	
+	// Initially the previous value of the touchpad is the origin of the touchpad
+	mPreviousTouchpadXcoord = 0;
 }
 
 /* 
@@ -93,14 +99,38 @@ function InteractionManager::UpdateLogic(dt, isVRon)
 		mActionsListManager.RedoLastAction();
 		
 		
-//	if(mInputManager.TouchpadLeftSinglePressed(mMenuController.GetIndex()))
-//		mToolsMenu.RotatePanels(true);
-//	else if(mInputManager.TouchpadRightSinglePressed(mMenuController.GetIndex()))
-//		mToolsMenu.RotatePanels(false);
-//	if(mInputManager.TouchpadLeftSinglePressed(mMenuController.GetIndex()))
-//		mAnimator.CreateRotatingTransition(mToolsMenu.GetObj(), 0, -90, [0, 1, 0], 1.0, false, false);
-//	else if(mInputManager.TouchpadRightSinglePressed(mMenuController.GetIndex()))
-//		mAnimator.CreateRotatingTransition(mToolsMenu.GetObj(), 0, 90, [0, 1, 0], 1.0, false, false);
+	// Now I check if the user is touching the touchpad of the menu controller; in that case, I need to rotate the tools menu
+	var touchpadCoords = mInputManager.GetTouchpadCoordinates(mMenuController.GetIndex());
+	
+	// I only rotate the panels if the x coordinate is different from the one in the previous tick (otherwise 
+	// I assume that the user is not touching the touchpad)
+	if(touchpadCoords != Void && touchpadCoords.x != mPreviousTouchpadXcoord)
+	{
+		var x = touchpadCoords.x;
+		
+		// If VR is on, I consider the real coordinates
+		if(isVRon)
+		{
+			var delta;
+			
+			// If the user is moving to the left, I consider the delta different from the last tick 
+			// as a negative value, otherwise I consider the positive value
+			if(x < mPreviousTouchpadXcoord)
+				delta = -(mPreviousTouchpadXcoord - x);
+			else
+				delta = x - mPreviousTouchpadXcoord;
+				
+			// I rotate the panel. The delta value will be directly used as the amount of angle to change, 
+			// so the sign of the delta value is important
+			mToolsMenu.RotatePanels(delta);
+			
+			mPreviousTouchpadXcoord = x;
+		}
+		// If VR is not on, the x value is the DeltaX value of the mouse, which is already negative if it's moving to the
+		// left and positive if it's moving to the right. I divide by 5 because otherwise the deltas are usually too big
+		else
+			mToolsMenu.RotatePanels(x / 5.0);
+	}
 }
 
 /*

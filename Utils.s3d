@@ -284,6 +284,27 @@ function HSVtoRGB(hsv)
  ******************************** MATH FUNCTIONS ********************************
  ********************************************************************************/
 
+
+/*
+ * Not working properly; should make the object point towards the given point; not used right now
+ */
+function ObjectLookAtPoint(object, point)
+{
+	var objectPos = object.GetPosition();
+	
+	var direction = Norm(point - objectPos);
+			
+	// To compute the angle around which to rotate the object, I compute the cross product between this vector and the up vector (the vector
+	// that tells me which way is up); the result will be a vector perpendicular to the 2, which I normalize to use it as a normal.
+	// I then switch sign, otherwise it turns on the opposite side
+	var axis = Norm(direction ^ [0, 1, 0]);
+	
+	// I now compute the angle for the rotation. The formula derives from "easy" trigonometry (lookup "finding angle between 2 vectors").
+	// I'm not sure why the final angle is shifted by 180 degrees; that's why I subtract 180
+	var angle = acos((direction * [0, 1, 0])) * RAD_TO_GRAD - 180; 
+	object.SetRotation(angle, axis.x, axis.y, axis.z);
+}
+
 /*
  * This function checks if a line segment intersects the given object; if it does, it returns the contact point, or Void otherwise
  * 

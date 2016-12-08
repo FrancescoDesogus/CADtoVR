@@ -84,6 +84,7 @@ class ViveController
 	SetRotationMatrix(matrix);
 	GetRotationMatrix();
 	Rotate(angle, x, y, z);
+	RotateABS(angle, x, y, z);
 	SetRotation(angle, x, y, z);
 	LocalToWorld(point);
 	Hide();
@@ -351,7 +352,7 @@ function ViveController::GetDirection()
 {
 	var center = mViveController.LocalToWorld([0, 0, 0]);
 	var tip = mViveController.LocalToWorld([0, 0, -1]);
-	return (tip - center);
+	return Norm(tip - center);
 }
 
 function ViveController::GetComfortModeDirection()
@@ -384,8 +385,14 @@ function ViveController::GetRotationMatrix()
 
 function ViveController::Rotate(angle, x, y, z)
 {
-	mViveController.RotateAbs(angle, x, y, z);
-	mBoundingBoxControllerObj.RotateAbs(angle, x, y, z);
+	mViveController.Rotate(angle, x, y, z);
+	mBoundingBoxControllerObj.Rotate(angle, x, y, z);
+}
+
+function ViveController::RotateABS(angle, x, y, z)
+{
+	mViveController.RotateABS(angle, x, y, z);
+	mBoundingBoxControllerObj.RotateABS(angle, x, y, z);
 }
 
 function ViveController::SetRotation(angle, x, y, z)

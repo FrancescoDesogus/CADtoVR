@@ -67,6 +67,7 @@ class KeyboardManager
 	TouchpadRightSinglePressed();
 	TouchpadUpSinglePressed();
 	TouchpadDownSinglePressed();
+	GetTouchpadCoordinates();
 	GetController(controllerIndex);
 };
 
@@ -142,7 +143,7 @@ function KeyboardManager::UpdateCamera()
   		mIsPressingMouseL = false;
 	}
 	// This is the case where we're NOT in debug mode, and the view must "follow" the mouse movements. I only procede if the program has focus
-	else if(HasFocus())
+	else if(HasFocus() && !Mouse.ButtonM2)
 	{
 		// In this case I update the offset with the "DeltaX" and "DeltaY" values, which are calculated taking into account even 
 		// if the mouse in windows is not actually inside the program's window.
@@ -411,6 +412,16 @@ function KeyboardManager::TouchpadDownSinglePressed()
 		mTouchpadDownSinglePressed = false;
 			
 	return false;
+}
+
+function KeyboardManager::GetTouchpadCoordinates()
+{
+	var coords = Void;
+	
+	if(Mouse.ButtonM2)
+		coords = [Mouse.DeltaX, Mouse.DeltaY];
+		
+	return coords;
 }
 
 function KeyboardManager::GetController(controllerIndex)

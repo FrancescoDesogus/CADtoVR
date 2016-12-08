@@ -36,6 +36,7 @@ class ViveManager
 	TouchpadRightSinglePressed(controllerIndex);
 	TouchpadUpSinglePressed(controllerIndex);
 	TouchpadDownSinglePressed(controllerIndex);
+	GetTouchpadCoordinates(controllerIndex);
 	VibrateController(controllerIndex, microseconds);
 	GetController(controllerIndex);
 	GetPlayAreaSize();
@@ -260,6 +261,13 @@ function ViveManager::TouchpadDownSinglePressed(controllerIndex)
 		mTouchpadDownSinglePressed = false;
 			
 	return false;
+}
+
+function ViveManager::GetTouchpadCoordinates(controllerIndex)
+{
+	var acctualControllerIndex = (controllerIndex == 1 ? mController1Index : mController2Index);
+	
+	return mHMD.GetTouchpadCoord(acctualControllerIndex);
 }
 
 function ViveManager::VibrateController(controllerIndex, microseconds)

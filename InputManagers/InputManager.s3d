@@ -41,6 +41,7 @@ class InputManager
 	TouchpadRightSinglePressed(controllerIndex);
 	TouchpadUpSinglePressed(controllerIndex);
 	TouchpadDownSinglePressed(controllerIndex);
+	GetTouchpadCoordinates(controllerIndex);
 	VibrateController(controllerIndex, microseconds);
 	GetPlayAreaSize();
 };
@@ -151,6 +152,11 @@ function InputManager::TouchpadUpSinglePressed(controllerIndex)
 function InputManager::TouchpadDownSinglePressed(controllerIndex)
 {
 	return mManager.TouchpadDownSinglePressed(controllerIndex);
+}
+
+function InputManager::GetTouchpadCoordinates(controllerIndex)
+{
+	return mManager.GetTouchpadCoordinates(controllerIndex);
 }
 
 function InputManager::GetController(controllerIndex)

@@ -33,6 +33,7 @@ class MenuController
 	SetRotationMatrix(matrix);
 	GetRotationMatrix();
 	Rotate(angle, x, y, z);
+	RotateABS(angle, x, y, z);
 	SetRotation(angle, x, y, z);
 	LocalToWorld(point);
 	Hide();
@@ -85,9 +86,9 @@ function MenuController::UpdateLogic(dt, isVRon)
 			rotZ -= 1;
 		
 		mViveController.SetRotation(0, 1, 0, 0);
-		mViveController.Rotate(rotY, 1, 0, 0);
-		mViveController.Rotate(rotX, 0, 1, 0);
-		mViveController.Rotate(rotZ, 0, 0, 1);
+		mViveController.RotateABS(rotY, 1, 0, 0);
+		mViveController.RotateABS(rotX, 0, 1, 0);
+		mViveController.RotateABS(rotZ, 0, 0, 1);
 		
 		
 		static var xOffset = 0;
@@ -187,6 +188,11 @@ function MenuController::GetRotationMatrix()
 function MenuController::Rotate(angle, x, y, z)
 {
 	mViveController.Rotate(angle, x, y, z);
+}
+
+function MenuController::RotateABS(angle, x, y, z)
+{
+	mViveController.RotateABS(angle, x, y, z);
 }
 
 function MenuController::SetRotation(angle, x, y, z)
