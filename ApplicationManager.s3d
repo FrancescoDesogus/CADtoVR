@@ -253,6 +253,8 @@ function ApplicationManager::ApplicationManager(HMD)
 function ApplicationManager::Render()
 {
 	mScene.SetupOpenglLights();
+	
+	mScene.OffscreenRender();
 			
 	SceneBegin(mCamera);
 	

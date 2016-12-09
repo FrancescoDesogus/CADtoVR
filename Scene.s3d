@@ -48,8 +48,20 @@ class Scene
 	var mDebugControllerHidden;
 	var mDebugKeyHit;
 	
+	
+	var mShadowsFbo;
+	var mShadowShader;
+	var mCameraLight;
+	var mCameraSphere;
+	var mOriginSphere;
+	
+	var mLight_mat_proj;
+	var mLight_mat_modelview;
+	var mTerrain;
+	
 	// Public functions
 	Init(lights, openglTranslationOffset);
+	OffscreenRender();
 	Render();
 	UpdateLogic(dt);
 	IsPointedPositionValid(rayOrigin, rayEnd, contactPoint, normal);
@@ -74,8 +86,18 @@ function Scene::Scene(isVRon, inputManager)
 	// Initially no controller is being used
 	mControllerBeingUsedIndex = 0;
 	
-	mObject = CVmObj(CVmNewMesh("Meshes/lamborghini.aam"));
-//	mObject = CVmObj(CVmNewMesh(VRP_TUBE, 30, 2 * SCALE_FACTOR, 5 * SCALE_FACTOR, 3 * SCALE_FACTOR, 1));
+	var objectMesh = CVmNewMesh("Meshes/lamborghini.aam");
+//	var objectMesh = CVmNewMesh("Meshes/tree.aam");
+//	objectMesh.Normalize(0.02);
+	objectMesh.CenterBoundingBox();
+	objectMesh.Scale(SCALE_FACTOR, SCALE_FACTOR, SCALE_FACTOR);
+//	objectMesh.Scale(0.02 * SCALE_FACTOR, 0.02 * SCALE_FACTOR, 0.02 * SCALE_FACTOR);
+	
+	mObject = CVmObj(objectMesh);
+	mObject.Translate([0, 10 * SCALE_FACTOR, 0]);
+	
+	mTerrain = CVmObj(CVmNewMesh("Meshes/grass.aam"));
+	mTerrain.Translate([0, -20 * SCALE_FACTOR, 0]);
 		
 	if(mIsVRon)
 	{
@@ -97,6 +119,21 @@ function Scene::Scene(isVRon, inputManager)
 	// Creating skybox
 	globalSkybox = SkyBox();
 	globalSkybox.LoadTextures({"Textures/posx.jpg", "Textures/negx.jpg", "Textures/posz.jpg", "Textures/negz.jpg", "Textures/posy.jpg", "Textures/negy.jpg"});
+	
+	mShadowsFbo = CVmFbo(VR_FBO_SHADOW, 8192);
+	
+	mShadowShader = CVmShaderProgram("Shaders/shadows_tex.glsl");
+	mShadowShader.Start();
+		mShadowShader.SetParameter("tex", 0);
+		mShadowShader.SetParameter("shadowMap", 2);
+	mShadowShader.Stop();
+	
+	mCameraLight = CVmCamera().SetPosition([20.0 * SCALE_FACTOR, 20.0 * SCALE_FACTOR, 20.0 * SCALE_FACTOR]).SetTarget([0.0, 0.0, 0.0]);
+	
+	mCameraSphere = CVmObj(CVmNewMesh(VRP_SPHERE, 30, 1 * SCALE_FACTOR, 1));
+	mOriginSphere = CVmObj(CVmNewMesh(VRP_SPHERE, 30, 5 * SCALE_FACTOR, 1));
+	
+	glPolygonOffset(2, 2);
 }
 
 
@@ -124,12 +161,12 @@ function Scene::Init(lights, openglTransformOffset)
 	mLight1 = lights[1];
 	mLight1.SetPosition(mLight1Position);
 	mLight1.SetDiffuse(mLight1Diffuse.x, mLight1Diffuse.y, mLight1Diffuse.z);
-	mLight1.Enable();
+//	mLight1.Enable();
 	
 	mLight2 = lights[2];
 	mLight2.SetPosition(mLight2Position);
 	mLight2.SetDiffuse(mLight1Diffuse.x, mLight1Diffuse.y, mLight1Diffuse.z);
-	mLight2.Enable();
+//	mLight2.Enable();
 	
 	// Retrieving the input manager and setting the initial camera's position
 	mCamera = mInputManager.GetActiveCamera();
@@ -141,29 +178,90 @@ function Scene::Init(lights, openglTransformOffset)
  * ****************************************************** */
 
 
+function Scene::OffscreenRender()
+{
+//	mCameraLight.SetPosition(mLight0.GetPosition());
+	
+	mShadowsFbo.Start();
+	
+	SceneBegin(mCameraLight);
+		mLight_mat_proj      = glGet(GL_PROJECTION_MATRIX);
+		mLight_mat_modelview = glGet(GL_MODELVIEW_MATRIX);
+		
+//		if(do_poff) 
+			glEnable(GL_POLYGON_OFFSET_FILL);
+		
+		mObject.Draw(VR_SORT_TRANSPARENT | VR_DOUBLEFACE);
+		
+//		if(do_poff) 
+			glDisable(GL_POLYGON_OFFSET_FILL);
+	SceneEnd();
+	mShadowsFbo.Stop();
+}
+
 /*
  * Render method
  */
 function Scene::Render()
 {	
+	if(Keypressed("M"))
+		mCameraLight.SetPosition(mCameraLight.GetPosition() + [0, 1 * SCALE_FACTOR, 0]);
+	if(Keypressed("N"))
+		mCameraLight.SetPosition(mCameraLight.GetPosition() - [0, 1 * SCALE_FACTOR, 0]);
+		
+	if(Keypressed("B"))
+		mCameraLight.SetPosition(mCameraLight.GetPosition() + [1 * SCALE_FACTOR, 0, 0]);
+	if(Keypressed("V"))
+		mCameraLight.SetPosition(mCameraLight.GetPosition() - [1 * SCALE_FACTOR, 0, 0]);
+		
+	if(Keypressed("C"))
+		mCameraLight.SetPosition(mCameraLight.GetPosition() + [0, 0, 1 * SCALE_FACTOR]);
+	if(Keypressed("X"))
+		mCameraLight.SetPosition(mCameraLight.GetPosition() - [0, 0, 1 * SCALE_FACTOR]);
+		
+	_out.print(mCameraLight.GetPosition());
+	mCameraSphere.SetPosition(mCameraLight.GetPosition());
+	// [52.600124, 17.599995, 20.200006] good position
+	
 	// If the user teleported modifying the mOpenglTranslationOffset, the lights will be in the wrong places. So at each frame I reset their 
 	// position, but note that I'm not setting the position acoordint to the offset: since in the GameManager the offset was used for the glTranslate(), at
 	// this point the world is already moved, and since I'm moving the light directly with opengl (so that the effect can be seen also with the Vive),
 	// I don't need to add the offset to the position, it's already taken care of
 	glLight(GL_LIGHT0, GL_POSITION, [mLight0Position.x, mLight0Position.y, mLight0Position.z, 1.0]); 
- 	glLight(GL_LIGHT1, GL_POSITION, [mLight1Position.x, mLight1Position.y, mLight1Position.z, 1.0]); 
- 	glLight(GL_LIGHT2, GL_POSITION, [mLight2Position.x, mLight2Position.y, mLight2Position.z, 1.0]);
- 	
-// 	if(!mIsVRon)
-// 		SetClearColor(0.9, 0.9, 0.9);
-//	else
-// 		glClearColor(0.9, 0.9, 0.9, 1.0);
+// 	glLight(GL_LIGHT1, GL_POSITION, [mLight1Position.x, mLight1Position.y, mLight1Position.z, 1.0]); 
+// 	glLight(GL_LIGHT2, GL_POSITION, [mLight2Position.x, mLight2Position.y, mLight2Position.z, 1.0]);
 			
 	var cameraPosition = mCamera.GetPosition() - mOpenglTranslationOffset;
 
 	globalSkybox.Render(cameraPosition);
+	
+	mCameraSphere.Draw();
+	mOriginSphere.Draw();
+	
+	var mvp = MatrixIdentity_4();
+	var biasMatrix = [
+	0.5, 0.0, 0.0, 0.0,
+	0.0, 0.5, 0.0, 0.0,
+	0.0, 0.0, 0.5, 0.0,
+	0.5, 0.5, 0.5, 1.0
+	];
+	
+	mvp = MatrixMultiplyMatrix_4(biasMatrix, mvp);
+	mvp = MatrixMultiplyMatrix_4(mvp, mLight_mat_proj);
+	mvp = MatrixMultiplyMatrix_4(mvp, mLight_mat_modelview);
+	mvp = MatrixMultiplyMatrix_4(mvp, MatrixInverse_4(glGet(GL_MODELVIEW_MATRIX)));
 
-	mObject.Draw();
+
+	SetActiveTexture(mShadowsFbo, 0, 2);
+	
+	mShadowShader.Start();
+		mShadowShader.SetParameter("mvp", mvp, false);
+
+//		mTerrain.Draw();
+		mObject.Draw(VR_SORT_TRANSPARENT | VR_DOUBLEFACE);
+	mShadowShader.Stop();
+
+//	mObject.Draw();
 	
 //	mActionController.Draw();		
 //	mMenuController.Draw();
