@@ -111,26 +111,47 @@ function InteractionManager::UpdateLogic(dt, isVRon)
 		// If VR is on, I consider the real coordinates
 		if(isVRon)
 		{
-			var delta;
-			
-			// If the user is moving to the left, I consider the delta different from the last tick 
-			// as a negative value, otherwise I consider the positive value
-			if(x < mPreviousTouchpadXcoord)
-				delta = -(mPreviousTouchpadXcoord - x);
-			else
-				delta = x - mPreviousTouchpadXcoord;
+			// When the user stops swiping, the last x it receives it's always 0. In that case, I don't rotate the panels 
+			// (because the  delta would be high and it wouldn't leave the panels where they are)
+			if(x != 0.0)
+			{
+				var delta;
 				
-			// I rotate the panel. The delta value will be directly used as the amount of angle to change, 
-			// so the sign of the delta value is important
-			mToolsMenu.RotatePanels(delta);
-			
-			mPreviousTouchpadXcoord = x;
+				// If this is the first time the user swipes, I initialize the previous touchpad cord with the current value.
+				// This is to avoid the situation where the user presses, for example, the leftmost part of the touchpad giving out
+				// a x coord of something like -1; in that case, since the previous coord is 0, it would mean that the delta increment will be
+				// very big, causing the panels to rotate A LOT. By initializing the previous coord like this, I avoid that situation
+				if(mPreviousTouchpadXcoord == 0.0)
+					mPreviousTouchpadXcoord = x;
+				else
+				{
+					// If the user is moving to the left, I consider the delta different from the last tick 
+					// as a negative value, otherwise I consider the positive value
+					if(x < mPreviousTouchpadXcoord)
+						delta = -(mPreviousTouchpadXcoord - x);
+					else
+						delta = x - mPreviousTouchpadXcoord;
+						
+					// I rotate the panel. The delta value will be directly used as the amount of angle to change, 
+					// so the sign of the delta value is important. I multiply by 100, otherwise the increments are too small
+					mToolsMenu.RotatePanels(delta * 100.0);
+					
+					mPreviousTouchpadXcoord = x;
+				}
+			}
+			// If the user stopped swiping, I reset the previous touchpad coord variable
+			else
+				mPreviousTouchpadXcoord = 0;
 		}
 		// If VR is not on, the x value is the DeltaX value of the mouse, which is already negative if it's moving to the
 		// left and positive if it's moving to the right. I divide by 5 because otherwise the deltas are usually too big
 		else
 			mToolsMenu.RotatePanels(x / 5.0);
 	}
+	
+	// If in the menu controller the grip is pressed, it deselects the current tool (if no tool was selected it has no effects)
+	if(mInputManager.HasPressedMenuButton(mActionController.GetIndex()))
+		_out.SetVisibility(!_out.IsVisible());
 }
 
 /*

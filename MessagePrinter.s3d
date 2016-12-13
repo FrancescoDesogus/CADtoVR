@@ -45,16 +45,16 @@ function MessagePrinter::MessagePrinter(isVRon)
 	// values of the objects drawn has to be inside this range to be inside the screen. So the size of the console is given
 	// in this term (for example, a vlaue of 1 for the width is half the screen)
 	mConsoleWidth = 0.7;
-	mConsoleHeight = 0.5;
+	mConsoleHeight = 0.3;
 	
 	// Creating the console object with the Util faction
 	mConsole = CreateGlassPlane(mConsoleWidth, mConsoleHeight, 0.01 * SCALE_FACTOR, [0.5, 0.5, 0.5], 0.5);
 	
-		// Setting the console position on the bottom left part of the screen
+	// Setting the console position on the bottom left part of the screen. This position is 
+	// actually overwritten in the draw method, I only keep it here as a reminder
 	mConsole.SetPosition(-1 + mConsoleWidth / 2.0 + 0.05, -1 + mConsoleHeight / 2.0 + 0.05, 0);
-//	mConsole.SetPosition(1 - mConsoleWidth / 2.0 - 0.05, -1 + mConsoleHeight / 2.0 + 0.05, 0);
 		
-	mMaxStrings = 16;
+	mMaxStrings = 9;
 	
 	mIsVisible = true;
 	
@@ -200,10 +200,16 @@ function MessagePrinter::Draw(eye)
 {
 	if(mIsVisible)
 	{
+		// If the vive is active, this draw method will be called for each eye. Eye == 1 is the left eye, eye == 2 is the right eye.
+		// In this case I need to position the console a bit left for the left eye and a bit right for the right eye. Note that
+		// the position offset between each eye is aribtrary, so it's not perfect. Still, for debugging is good enough
 		if(eye == 1)
-			mConsole.SetPosition(-1 + mConsoleWidth + 0.05, -1 + mConsoleHeight + 0.05, 0);
+			mConsole.SetPosition(-0.5 + mConsoleWidth + 0.05, -0.7 + mConsoleHeight + 0.05, 0);
 		else if(eye == 2)
-			mConsole.SetPosition(-1 + mConsoleWidth / 2.0 + 0.05, -1 + mConsoleHeight + 0.05, 0);
+			mConsole.SetPosition(-0.5 + mConsoleWidth / 2.0 + 0.05, -0.7 + mConsoleHeight + 0.05, 0);
+		// This is the case for normal XVR rendering; the console is put on the lower left part of the screen
+		else if(eye == 0)
+			mConsole.SetPosition(-1 + mConsoleWidth / 2.0 + 0.05, -1 + mConsoleHeight / 2.0 + 0.05, 0);
 			
 		for(var i = 0; i < len(mTexts); i++)
 			SetTextPosition(mTexts[i], i);

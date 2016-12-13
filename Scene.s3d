@@ -86,15 +86,15 @@ function Scene::Scene(isVRon, inputManager)
 	// Initially no controller is being used
 	mControllerBeingUsedIndex = 0;
 	
-	var objectMesh = CVmNewMesh("Meshes/lamborghini.aam");
+	var objectMesh = CVmNewMesh("Meshes/lamborghini2.aam");
 //	var objectMesh = CVmNewMesh("Meshes/tree.aam");
 //	objectMesh.Normalize(0.02);
-	objectMesh.CenterBoundingBox();
-	objectMesh.Scale(SCALE_FACTOR, SCALE_FACTOR, SCALE_FACTOR);
+//	objectMesh.CenterBoundingBox();
+//	objectMesh.Scale(SCALE_FACTOR, SCALE_FACTOR, SCALE_FACTOR);
 //	objectMesh.Scale(0.02 * SCALE_FACTOR, 0.02 * SCALE_FACTOR, 0.02 * SCALE_FACTOR);
 	
 	mObject = CVmObj(objectMesh);
-	mObject.Translate([0, 10 * SCALE_FACTOR, 0]);
+//	mObject.Translate([0, 10 * SCALE_FACTOR, 0]);
 	
 	mTerrain = CVmObj(CVmNewMesh("Meshes/grass.aam"));
 	mTerrain.Translate([0, -20 * SCALE_FACTOR, 0]);
@@ -219,7 +219,7 @@ function Scene::Render()
 	if(Keypressed("X"))
 		mCameraLight.SetPosition(mCameraLight.GetPosition() - [0, 0, 1 * SCALE_FACTOR]);
 		
-	_out.print(mCameraLight.GetPosition());
+//	_out.print(mCameraLight.GetPosition());
 	mCameraSphere.SetPosition(mCameraLight.GetPosition());
 	// [52.600124, 17.599995, 20.200006] good position
 	
@@ -235,8 +235,8 @@ function Scene::Render()
 
 	globalSkybox.Render(cameraPosition);
 	
-	mCameraSphere.Draw();
-	mOriginSphere.Draw();
+//	mCameraSphere.Draw();
+//	mOriginSphere.Draw();
 	
 	var mvp = MatrixIdentity_4();
 	var biasMatrix = [
@@ -252,16 +252,16 @@ function Scene::Render()
 	mvp = MatrixMultiplyMatrix_4(mvp, MatrixInverse_4(glGet(GL_MODELVIEW_MATRIX)));
 
 
-	SetActiveTexture(mShadowsFbo, 0, 2);
+//	SetActiveTexture(mShadowsFbo, 0, 2);
 	
-	mShadowShader.Start();
+//	mShadowShader.Start();
 		mShadowShader.SetParameter("mvp", mvp, false);
 
 //		mTerrain.Draw();
-		mObject.Draw(VR_SORT_TRANSPARENT | VR_DOUBLEFACE);
-	mShadowShader.Stop();
+//		mObject.Draw(VR_SORT_TRANSPARENT | VR_DOUBLEFACE);
+//	mShadowShader.Stop();
 
-//	mObject.Draw();
+	mObject.Draw();
 	
 //	mActionController.Draw();		
 //	mMenuController.Draw();
